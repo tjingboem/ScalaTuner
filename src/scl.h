@@ -99,18 +99,39 @@ static inline bool scl_load (const char *path, Scl *sc)
     return true;
 }
 
-// tab[n] = log2 (freq of MIDI note n / reference A (note 69)).
-// `root` carries 1/1 at its 12-TET pitch; notes map one per degree.
-static inline void scl_table (const Scl *sc, int root, float *tab)
+struct TabInfo
+{
+    int n;      // number of entries
+    int kmin;   // step number (from 1/1 at the Scale Root) of entry 0
+};
+
+// The notes of the scale over the audible range (about 27 Hz to 7 kHz at A = 440),
+// in ascending order: tab[e] = log2 (freq / reference A) of step kmin + e.
+// Step 0 is 1/1 and sounds at the 12-TET pitch of MIDI note `root`; step k is
+// the note k scale degrees above it (negative below). `max` is the room in tab.
+static inline TabInfo scl_build (const Scl *sc, int root, float *tab, int max)
 {
     const double rootlog = (root - 69) / 12.0;
     const double period  = sc->oct [sc->n - 1];
-    for (int n = 0; n < 128; n++)
+    double lo = -4.5, hi = 4.5;
+    TabInfo ti = { 0, 0 };
+    for (int pass = 0; pass < 8; pass++)
     {
-        int k = n - root;
-        int q = k / sc->n;
-        int r = k % sc->n;
-        if (r < 0) { r += sc->n; q--; }
-        tab [n] = (float)(rootlog + q * period + (r ? sc->oct [r - 1] : 0.0));
+        int qlo = (int)floor ((lo - rootlog) / period) - 1;
+        int qhi = (int)ceil ((hi - rootlog) / period) + 1;
+        ti.n = 0;
+        bool full = false;
+        for (int q = qlo; q <= qhi && !full; q++)
+            for (int r = 0; r < sc->n; r++)
+            {
+                double v = rootlog + q * period + (r ? sc->oct [r - 1] : 0.0);
+                if (v < lo || v > hi) continue;
+                if (ti.n == 0) ti.kmin = q * sc->n + r;
+                if (ti.n == max) { full = true; break; }
+                tab [ti.n++] = (float)v;
+            }
+        if (!full) break;
+        lo += 0.5; hi -= 0.5;   // very fine scales: narrow the range until it fits
     }
+    return ti;
 }

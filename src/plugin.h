@@ -25,7 +25,7 @@
 
 enum {
     P_SCALE, P_ROOT, P_TUNE, P_BIAS, P_SMOOTH, P_CORR, P_OFFS, P_MODE,
-    P_MINHZ, P_MAXHZ, P_THRESH, P_COUNT
+    P_MINHZ, P_MAXHZ, P_THRESH, P_LOOK, P_COUNT
 };
 
 struct ParamInfo
@@ -85,8 +85,14 @@ struct Plugin
     uint32_t seen_gen;
     int      tab_root;
     bool     tab_valid;
-    float    tab [128];
-    int      latency;
+    float    tab [TAB_MAX];        // scale table (see scl_build)
+    int      tab_n, tab_kmin;
+    float    maxdist;              // largest pull, in octaves
+    unsigned int act [TAB_MAX / 32]; // allowed entries
+    unsigned char cls [SCL_MAX];   // held scale steps (pitch classes)
+    std::atomic<int> latency;      // reported delay in frames
+    std::atomic<bool> latency_dirty; // tell the host from the main thread
+    int      look_applied;
 
     // GUI -> audio parameter edits (single producer / single consumer).
     GuiMsg   q [256];
@@ -105,6 +111,7 @@ struct Plugin
 void plugin_gui_param (Plugin *p, int kind, uint32_t id, double value);
 std::string plugin_param_text (Plugin *p, uint32_t id, double value);
 void note_name (int midi, char *buf, size_t n);
+#define NOTE_NONE (-100000)   // d_note: no note
 
 // Scale folders (GUI thread). Return false and set *err on failure.
 bool plugin_add_dir (Plugin *p, const std::string &path, std::string *err);

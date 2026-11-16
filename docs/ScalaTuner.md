@@ -72,6 +72,7 @@ The Settings tab holds the settings for the pitch detection. They are for fittin
 | Lowest Pitch | 50 to 500 Hz | 75 Hz | Pitches below this are not followed. |
 | Highest Pitch | 200 to 4000 Hz | 1200 Hz | Pitches above this are not followed. |
 | Threshold | -90 to -20 dB | -50 dB | Sound below this level is taken for silence. 0 dB is a full-scale sine wave. |
+| Lookahead | Off, 43 ms, 85 ms | Off | Extra delay, so that the pitch is known before a note is heard. See Delay and Lookahead, below. |
 
 Set the range around the sound that you play in. A bass line can have the range 40 to 300 Hz, and a high flute 250 to 3000 Hz. A narrower range makes it harder for the detector to mistake a harmonic for the pitch, which is the cause of a note jumping an octave. It also keeps ScalaTuner from reacting to rumble or hiss.
 
@@ -87,7 +88,7 @@ The Settings page also holds the scale folders. Under SCALE FOLDERS it lists eve
 
 The folders are the same for every ScalaTuner in the project and in other projects. The scale a project uses is saved by name; if the file is no longer there when the project is opened, ScalaTuner uses 12-TET.
 
-All three settings can be automated by the host, like the sliders on the Main page.
+All four settings can be automated by the host, like the sliders on the Main page.
 
 ## What happens to the sound
 
@@ -129,6 +130,10 @@ ScalaTuner can take notes to say which notes of the scale are allowed. Notes arr
 
 MIDI notes are placed on the scale one note per step, starting at the Scale Root. The Scale Root note is 1/1. The note above it is the second note of the scale, and so on. On a scale of 19 notes, 19 keys in a row cover one period, and the 20th key is 1/1 again, one period higher. Notes below the Scale Root count downward in the same way.
 
+A held key allows its note of the scale in every octave, not at one exact pitch. This is the pitch class of the key: its place within one period of the scale. In 12-TET, holding C# allows every C#, and a sound that is heard as C#2, C#3 or C#5 is pulled to the nearest C#. In a scale of 19 notes, the key that is step 5 allows step 5 in every period. Two keys that are one period apart allow the same note. The sound always moves the shortest way to the nearest allowed note, so the octave of the key that you play does not matter, and neither does the octave in which the detector hears the sound. This keeps the correction steady if the detector flips between a note and its octave, which happens with sounds that are rich in partials.
+
+You play, or draw in the MIDI editor, only the notes that you want to allow, in any octave. If the keys of the editor are not those of your scale, think in steps: the step of a key is its distance from the Scale Root, counted within one period.
+
 - **Auto:** while notes are held, only those notes are allowed. With no note held, all notes of the scale are allowed. This is the usual setting: it works as a plain autotuner, and playing notes steers it.
 - **MIDI:** only held notes are allowed. With no note held, the sound is not corrected.
 - **Manual:** all notes of the scale are always allowed. MIDI notes are ignored.
@@ -139,14 +144,23 @@ Each channel has its own pitch tracker, so the two channels do not have to hold 
 
 The settings are shared: both channels use the same scale, the same root and the same sliders. The result is that a mono sound that is sent to both channels is tuned twice in the same way. If the left and right channels carry a stereo recording of one single sound, they may land on different notes and the stereo image can shift. If that happens, tune the sound before it is made stereo.
 
-## Delay
+## Delay and Lookahead
 
-ScalaTuner needs a little time to hear the pitch. The sound comes out 1024 samples late at 44.1 and 48 kHz, which is about 21 to 23 milliseconds, and 2048 samples at 88.2 and 96 kHz. The plug-in tells the host this delay, and a host with plug-in delay compensation lines everything up again. For playing live through the plug-in, the delay is audible.
+ScalaTuner needs a little time to hear the pitch. With Lookahead off, the sound comes out 1024 samples late at 44.1 and 48 kHz, which is about 21 to 23 milliseconds, and 2048 samples at 88.2 and 96 kHz. The plug-in tells the host this delay, and a host with plug-in delay compensation lines everything up again. For playing live through the plug-in, the delay is audible.
+
+Hearing the pitch also takes time: the detector looks at about 43 milliseconds of sound, and on a clean, steady tone it knows the pitch after about 20 milliseconds. On a sound with a noisy or inharmonic start, it takes longer. During that time the start of the note is played at its original pitch, and then the pitch moves to the grid. That is the short glide you hear at the start of a note.
+
+Lookahead removes it. It adds delay on purpose, so that the plug-in knows the pitch before it plays the start of the note. Off is the normal delay, 43 ms doubles it, 85 ms quadruples it. The setting shows the delay in milliseconds at the sample rate of the project. The host is told about the new delay and compensates for it, so tracks stay lined up; the only price is that the sound is later, which is fine for sounds that are not played live.
+
+- Choose a longer Lookahead when the start of a note glides, or when the pitch needs time to settle at the start of a sample.
+- A change of Lookahead changes the delay of the plug-in. Some hosts need a moment to recalculate the compensation, or restart playback.
+- A very long, noisy start, such as the attack of a bell or a struck resonator, may need the longest setting, and may still not be heard as one pitch.
 
 ## Good to know
 
 - ScalaTuner follows one pitch in each channel. Chords and several voices in one channel are not tuned note by note; the strongest pitch is followed.
 - It hears pitches between 75 and 1200 Hz, and a sound below -50 dB is taken for silence. Both can be changed on the Settings page. Noise without a clear pitch is left alone.
+- The scale is available over the whole range from about 27 Hz to 7 kHz, whatever the number of notes. How far a note can be pulled is limited to half a period of the scale, and at least one octave; a pitch further from every allowed note than that is left alone.
 - On a scale with few notes, such as 5 or 7 per octave, the jumps between notes are large. The meter bar can stay at its end while a note is far from the next one. That is not a fault.
 - The sound is changed by playing it faster or slower between cuts, as in a tape machine, with short cross-fades. Very large corrections, and unvoiced sounds like consonants, are the places where this can be heard.
 - The scale list is read when the plug-in is loaded and whenever you add or remove a folder, and a scale is read from its file when it is chosen. A very large file with more than 1000 notes is not accepted; the plug-in uses 12-TET and shows a warning in red next to the scale name.

@@ -38,11 +38,12 @@ static const Slider sliders [] = {
     { P_SMOOTH, 326, true,  0 },
     { P_CORR,   356, false, 0 },
     { P_OFFS,   386, false, 0 },
-    { P_MINHZ,  100, true,  1 },
-    { P_MAXHZ,  140, true,  1 },
-    { P_THRESH, 180, false, 1 },
+    { P_MINHZ,   88, true,  1 },
+    { P_MAXHZ,  120, true,  1 },
+    { P_THRESH, 152, false, 1 },
+    { P_LOOK,   184, false, 1 },
 };
-static const int NSL = 9;
+static const int NSL = 10;
 static const int TAB_X = RX + RW - 176, TAB_Y = 10, TAB_W = 84, TAB_H = 26;
 static const int SL_X = RX + 110, SL_W = RW - 110 - 120, SL_H = 10;
 
@@ -354,7 +355,7 @@ static void draw (Gui *g, cairo_t *cr)
         text (cr, RX + 12, y + 14, c ? "R" : "L", 13, chcol [c]);
         int note = p->d_note [c];
         char nn [16];
-        if (p->d_voiced [c] && note >= 0) note_name (note, nn, sizeof (nn)); else snprintf (nn, sizeof (nn), "-");
+        if (p->d_voiced [c] && note > NOTE_NONE / 2) note_name (note, nn, sizeof (nn)); else snprintf (nn, sizeof (nn), "-");
         text (cr, RX + 34, y + 14, nn, 14, 0xe8ecf4);
         double err = p->d_voiced [c] ? p->d_err [c] * 100.0 : 0.0;   // cents
         snprintf (b, sizeof (b), p->d_voiced [c] ? "%+.0f c" : "", err);

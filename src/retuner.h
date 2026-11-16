@@ -28,6 +28,8 @@
 
 using LV2AT::Resampler;
 
+#define TAB_MAX 16384   // largest number of notes in the scale table
+
 
 class Retuner
 {
@@ -91,19 +93,42 @@ public:
 	_latency = _ipsize / (on ? 4 : 2);
     }
    
-    // Table mode (Scala scales): tab[n] = log2(freq_n / refpitch) for MIDI
-    // note n = 0..127; active = 128-bit mask (4 x uint32). The detected
-    // pitch is pulled to the nearest active entry.
-    void set_table (const float *tab, const unsigned int *active)
+    // Scala scales. The table holds log2 (freq / refpitch) for every note of the
+    // scale over the whole audible range, in ascending order (n <= TAB_MAX).
+    // The detected pitch is pulled to the nearest ACTIVE entry; set_active gives
+    // one bit per entry. maxdist is the largest distance, in octaves, that a pitch
+    // may be pulled.
+    void set_table (const float *tab, int n)
     {
-        for (int i = 0; i < 128; i++) _tab [i] = tab [i];
-        for (int i = 0; i < 4; i++) _tabmask [i] = active [i];
+        _tabn = n > TAB_MAX ? TAB_MAX : n;
+        for (int i = 0; i < _tabn; i++) _tab [i] = tab [i];
+        _lastnote = -1;
+    }
+
+    void set_active (const unsigned int *mask)
+    {
+        int w = (_tabn + 31) / 32;
+        unsigned int any = 0;
+        for (int i = 0; i < w; i++) { _tabmask [i] = mask [i]; any |= mask [i]; }
+        _tabany = any != 0;
+    }
+
+    void set_maxdist (float oct)
+    {
+        _maxdist = oct;
     }
 
     // Display only.
     int   get_note (void) const { return _lastnote; }              // table index or -1
     float get_cycle (void) const { return _cycle; }                // period in samples
     bool  voiced (void) const { return _count < 3; }
+    // Lookahead 0, 1, 2 = delay of 1x, 2x, 4x the zita-at1 delay (21, 43, 85 ms at 48 kHz).
+    void  set_lookahead (int step)
+    {
+        if (step < 0) step = 0;
+        if (step > 2) step = 2;
+        _latency = _lat0 << step;
+    }
     int   latency (void) const { return _upsamp ? _latency / 2 : _latency; }
     float get_ratio (void) const { return _ratio; }
 
@@ -137,6 +162,7 @@ private:
     int              _ipsize;
     int              _frsize;
     int              _latency;
+    int              _lat0;
     int              _ipindex;
     int              _frindex;
     int              _frcount;
@@ -146,8 +172,11 @@ private:
     float            _corrgain;
     float            _corroffs;
     int              _notemask;
-    float            _tab [128];
-    unsigned int     _tabmask [4];
+    int              _tabn;
+    bool             _tabany;
+    float            _maxdist;
+    float            _tab [TAB_MAX];
+    unsigned int     _tabmask [TAB_MAX / 32];
     int              _notebits;
     int              _lastnote;
     int              _count;

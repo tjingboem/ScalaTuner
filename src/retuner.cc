@@ -69,6 +69,13 @@ Retuner::Retuner (int fsamp) :
         _frsize = 512;
     }
 
+    // The input buffer is four times larger than in zita-at1, so that the delay
+    // between input and output can be raised (lookahead): at 1x the delay is the
+    // original ipsize / 2, at 2x and 4x the pitch has been found before the
+    // note is heard.
+    _lat0 = _ipsize / 2;
+    _ipsize *= 4;
+
     // Accepted correlation peak range, corresponding to 75..1200 Hz.
     _thresh = 1e-5f;  // -50 dB
     _ifmin = _fsamp / 1200;
@@ -127,14 +134,16 @@ Retuner::Retuner (int fsamp) :
     _error = 0.0f;
     _ratio = 1.0f;
     _xfade = false;
-    _latency = _ipsize / 2;
+    _latency = _lat0;
     _ipindex = _latency;
     _frindex = 0;
     _frcount = 0;
     _rindex1 = 0;
     _rindex2 = 0;
-    for (i = 0; i < 128; i++) _tab [i] = (i - 69) / 12.0f;
-    for (i = 0; i < 4; i++) _tabmask [i] = 0xffffffffu;
+    _tabn = 0;
+    _tabany = false;
+    _maxdist = 1.0f;
+    memset (_tabmask, 0, sizeof (_tabmask));
 }
 
 
@@ -366,7 +375,10 @@ float Retuner::findcycle (void)
 
     d = _upsamp ? 2 : 1;
     h = _fftlen / 2;
-    j = _ipindex;
+    // The analysis window is the most recent fftlen * d samples of the input buffer.
+    // (In zita-at1 that is the whole buffer, so it started at _ipindex; the buffer is
+    // larger here, for the lookahead.)
+    j = (_ipindex + _ipsize - _fftlen * d) & (_ipsize - 1);
     k = _ipsize - 1;
 
     // Apply window (includes FFT scale factor).
@@ -484,7 +496,7 @@ void Retuner::finderror (void)
     int    i, im;
     float  a, am, d, dm, f;
 
-    if (!(_tabmask [0] | _tabmask [1] | _tabmask [2] | _tabmask [3]))
+    if (!_tabany)
     {
         _error = 0;
         _lastnote = -1;
@@ -492,9 +504,9 @@ void Retuner::finderror (void)
     }
     f = log2f (_fsamp / (_cycle * _refpitch));
     dm = 0;
-    am = 1;
+    am = _maxdist;
     im = -1;
-    for (i = 0; i < 128; i++)
+    for (i = 0; i < _tabn; i++)
     {
         if (_tabmask [i >> 5] & (1u << (i & 31)))
         {

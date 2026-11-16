@@ -34,6 +34,7 @@ const ParamInfo param_info [P_COUNT] = {
     { "Lowest Pitch",  50,   500,  75,    false },
     { "Highest Pitch", 200,  4000, 1200,  false },
     { "Threshold",     -90,  -20,  -50,   false },
+    { "Lookahead",     0,    2,    0,     true  },
 };
 
 static const char *mode_names [3] = { "Auto", "MIDI", "Manual" };
@@ -41,8 +42,9 @@ static const char *mode_names [3] = { "Auto", "MIDI", "Manual" };
 void note_name (int m, char *buf, size_t n)
 {
     static const char *nn [12] = { "C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B" };
-    if (m < 0) { snprintf (buf, n, "-"); return; }
-    snprintf (buf, n, "%s%d", nn [m % 12], m / 12 - 1);
+    if (m <= NOTE_NONE / 2) { snprintf (buf, n, "-"); return; }
+    int pc = ((m % 12) + 12) % 12, oct = (m - pc) / 12 - 1;
+    snprintf (buf, n, "%s%d", nn [pc], oct);
 }
 
 // ----------------------------------------------------------------------------
@@ -291,6 +293,16 @@ std::string plugin_param_text (Plugin *p, uint32_t id, double v)
     case P_MINHZ:
     case P_MAXHZ:  snprintf (b, sizeof (b), "%.0f Hz", v); return b;
     case P_THRESH: snprintf (b, sizeof (b), "%.0f dB", v); return b;
+    case P_LOOK:
+    {
+        // delay in ms for this step at the current sample rate
+        int base = p->sr < 64000 ? 1024 : p->sr < 128000 ? 2048 : 4096;
+        int st = (int)lrint (v);
+        if (st < 0) st = 0;
+        if (st > 2) st = 2;
+        snprintf (b, sizeof (b), st ? "%.0f ms" : "Off  %.0f ms", (base << st) * 1000.0 / p->sr);
+        return b;
+    }
     case P_MODE:
     {
         int i = (int)lrint (v);
@@ -548,6 +560,9 @@ static bool plug_activate (const clap_plugin_t *pl, double sr, uint32_t minf, ui
     }
     p->maxframes = maxf < 64 ? 64 : maxf > 8192 ? 8192 : maxf;
     for (int c = 0; c < 2; c++) p->scratch [c].assign (p->maxframes, 0.f);
+    p->look_applied = (int)lrint (p->val [P_LOOK]);
+    p->rt [0]->set_lookahead (p->look_applied);
+    p->rt [1]->set_lookahead (p->look_applied);
     p->latency = p->rt [0]->latency ();
     memset (p->held, 0, sizeof (p->held));
     p->tab_valid = false;
@@ -600,17 +615,54 @@ static clap_process_status plug_process (const clap_plugin_t *pl, const clap_pro
     if (!p->tab_valid && p->seen_gen == 0) { p->local.twelve_tet (); }
     if (!p->tab_valid || root != p->tab_root)
     {
-        scl_table (&p->local, root, p->tab);
+        TabInfo ti = scl_build (&p->local, root, p->tab, TAB_MAX);
+        p->tab_n = ti.n;
+        p->tab_kmin = ti.kmin;
         p->tab_root = root;
         p->tab_valid = true;
+        // The largest gap to a held note class is half a period; allow that.
+        double period = p->local.oct [p->local.n - 1];
+        p->maxdist = (float)(period / 2 + 0.02 > 1.0 ? period / 2 + 0.02 : 1.0);
+        for (uint32_t c = 0; c < 2; c++)
+            if (p->rt [c]) p->rt [c]->set_table (p->tab, p->tab_n);
     }
 
+    // Allowed notes. A held MIDI key stands for a note of the scale in every octave
+    // (its pitch class): step = key - root, counted within one period.
     int mode = (int)lrint (p->val [P_MODE]);
-    unsigned int act [4] = { 0, 0, 0, 0 };
+    const int ns = p->local.n;
     bool any = false;
-    for (int n = 0; n < 128; n++)
-        if (p->held [n]) { act [n >> 5] |= 1u << (n & 31); any = true; }
-    if (mode == 2 || (mode == 0 && !any)) act [0] = act [1] = act [2] = act [3] = 0xffffffffu;
+    memset (p->cls, 0, ns);
+    for (int m = 0; m < 128; m++)
+        if (p->held [m])
+        {
+            int r = (((m - root) % ns) + ns) % ns;
+            p->cls [r] = 1;
+            any = true;
+        }
+    const int words = (p->tab_n + 31) / 32;
+    if (mode == 2 || (mode == 0 && !any))
+        for (int w = 0; w < words; w++) p->act [w] = 0xffffffffu;
+    else
+    {
+        memset (p->act, 0, words * sizeof (unsigned int));
+        for (int e = 0; e < p->tab_n; e++)
+        {
+            int r = (((p->tab_kmin + e) % ns) + ns) % ns;
+            if (p->cls [r]) p->act [e >> 5] |= 1u << (e & 31);
+        }
+    }
+
+    int look = (int)lrint (p->val [P_LOOK]);
+    if (look != p->look_applied)
+    {
+        p->look_applied = look;
+        p->rt [0]->set_lookahead (look);
+        p->rt [1]->set_lookahead (look);
+        p->latency = p->rt [0]->latency ();
+        p->latency_dirty = true;
+        p->host->request_callback (p->host);   // the host is told from the main thread
+    }
 
     for (uint32_t c = 0; c < nch; c++)
     {
@@ -622,7 +674,8 @@ static clap_process_status plug_process (const clap_plugin_t *pl, const clap_pro
         r->set_corroffs ((float)p->val [P_OFFS]);
         r->set_range ((float)p->val [P_MINHZ], (float)p->val [P_MAXHZ]);
         r->set_threshold ((float)p->val [P_THRESH]);
-        r->set_table (p->tab, act);
+        r->set_active (p->act);
+        r->set_maxdist (p->maxdist);
     }
 
     uint32_t done = 0, total = pr->frames_count;
@@ -643,7 +696,8 @@ static clap_process_status plug_process (const clap_plugin_t *pl, const clap_pro
     for (uint32_t c = 0; c < nch; c++)
     {
         Retuner *r = p->rt [c];
-        p->d_note [c] = r->get_note ();
+        int e = r->get_note ();   // table entry -> the key that plays that step
+        p->d_note [c] = e >= 0 ? root + p->tab_kmin + e : NOTE_NONE;
         p->d_err [c] = r->get_error ();
         p->d_cycle [c] = r->get_cycle ();
         p->d_voiced [c] = r->voiced () ? 1 : 0;
@@ -726,7 +780,11 @@ static const void *plug_get_extension (const clap_plugin_t *, const char *id)
     return nullptr;
 }
 
-static void plug_on_main_thread (const clap_plugin_t *) {}
+static void plug_on_main_thread (const clap_plugin_t *pl)
+{
+    Plugin *p = (Plugin *)pl->plugin_data;
+    if (p->latency_dirty.exchange (false) && p->host_latency) p->host_latency->changed (p->host);
+}
 
 // ----------------------------------------------------------------------------
 // Factory
@@ -754,10 +812,10 @@ static const clap_plugin_t *factory_create (const clap_plugin_factory_t *, const
     p->cur.twelve_tet ();
     p->local.twelve_tet ();
     p->rt [0] = p->rt [1] = nullptr;
-    p->sr = 48000; p->maxframes = 0; p->seen_gen = 0; p->tab_valid = false; p->tab_root = 60; p->latency = 0;
+    p->sr = 48000; p->maxframes = 0; p->seen_gen = 0; p->tab_valid = false; p->tab_root = 60; p->latency = 0; p->latency_dirty = false; p->look_applied = 0;
     memset (p->held, 0, sizeof (p->held));
     p->q_w = p->q_r = 0;
-    for (int c = 0; c < 2; c++) { p->d_note [c] = -1; p->d_err [c] = 0; p->d_cycle [c] = 0; p->d_voiced [c] = 0; }
+    for (int c = 0; c < 2; c++) { p->d_note [c] = NOTE_NONE; p->d_err [c] = 0; p->d_cycle [c] = 0; p->d_voiced [c] = 0; }
     p->gui = nullptr;
     p->quit = false;
     p->plugin.desc = &descriptor;
