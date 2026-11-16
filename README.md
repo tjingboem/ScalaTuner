@@ -19,9 +19,12 @@ matching step was replaced, with a 128-note lookup table built from the scale.
   pitch-error meters, sliders
 - Modes: **Auto** (held MIDI notes if any, otherwise the whole scale), **MIDI** (held notes only),
   **Manual** (whole scale)
-- **Root Note** sets which MIDI note carries the scale's 1/1; MIDI notes map one per scale degree
+- **Scale Root** sets which MIDI note carries the scale's 1/1 (its sounding Hz is shown next to it); **A Reference** sets the pitch of A4. MIDI notes map one per scale degree
 - Reports its latency to the host (1024 samples at 48 kHz)
 - Saves the scale by name, so projects survive re-ordering of your scale folder
+
+## Manual
+See [`docs/ScalaTune.odt`](docs/ScalaTune.odt) (source text: `docs/ScalaTune.md`; rebuilt with `tools/make_manual.py`).
 
 ## Where the scales come from
 In this order:

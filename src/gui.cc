@@ -27,7 +27,7 @@ static const Slider sliders [] = {
     { P_OFFS,   386, false },
 };
 static const int NSL = 6;
-static const int SL_X = RX + 110, SL_W = RW - 110 - 70, SL_H = 10;
+static const int SL_X = RX + 110, SL_W = RW - 110 - 120, SL_H = 10;
 
 struct Gui
 {

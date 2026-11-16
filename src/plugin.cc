@@ -11,8 +11,8 @@ static std::mutex fftw_lock;   // the FFTW planner is not thread-safe
 
 const ParamInfo param_info [P_COUNT] = {
     { "Scale",      0,    0,    0,   true  },  // max filled in per instance
-    { "Root Note",  0,    127,  60,  true  },
-    { "Tuning",     400,  480,  440, false },
+    { "Scale Root",  0,    127,  60,  true  },
+    { "A Reference", 400,  480,  440, false },
     { "Bias",       0,    1,    0.5, false },
     { "Smoothing",  0.02, 0.5,  0.1, false },
     { "Correction", 0,    1,    1,   false },
@@ -132,7 +132,15 @@ std::string plugin_param_text (Plugin *p, uint32_t id, double v)
         if (i <= 0 || i > p->nscales) return "12-TET";
         return p->names [i - 1];
     }
-    case P_ROOT:   note_name ((int)lrint (v), b, sizeof (b)); return b;
+    case P_ROOT:
+    {
+        // Name and sounding frequency of the note that carries the scale's 1/1.
+        char nm [16];
+        int n = (int)lrint (v);
+        note_name (n, nm, sizeof (nm));
+        snprintf (b, sizeof (b), "%s  %.1f Hz", nm, p->val [P_TUNE] * pow (2.0, (n - 69) / 12.0));
+        return b;
+    }
     case P_TUNE:   snprintf (b, sizeof (b), "%.1f Hz", v); return b;
     case P_BIAS:   snprintf (b, sizeof (b), "%.2f", v); return b;
     case P_SMOOTH: snprintf (b, sizeof (b), "%.3f", v); return b;
