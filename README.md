@@ -55,4 +55,4 @@ interaction). Listening tests on real voices and testing in more hosts are still
 - Resampler: from Fons Adriaensen's zita-resampler, via x42's fat1.lv2 (GPL)
 - CLAP headers: free-audio/clap, MIT (see `include/CLAP-LICENSE`)
 
-ScalaTuner is distributed under the **GNU General Public License v3** (see `COPYING`).
+ScalaTuner is distributed under the **GNU General Public License v3** (see `LICENSE`).

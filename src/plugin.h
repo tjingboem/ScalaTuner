@@ -1,3 +1,15 @@
+// ScalaTuner - stereo autotuner that snaps pitch to Scala (.scl) scales.
+// Copyright (C) 2026 tjingboem productions
+//
+// This program is free software: you can redistribute it and/or modify it under the
+// terms of the GNU General Public License as published by the Free Software Foundation,
+// either version 3 of the License, or (at your option) any later version. It is
+// distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even
+// the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+// GNU General Public License (the file LICENSE) for more details.
+//
+// Pitch tracking core: zita-at1 0.8.2, Copyright (C) 2010-2024 Fons Adriaensen (GPL v3).
+
 // ScalaTuner: stereo autotuner snapping to Scala (.scl) scales. CLAP plugin.
 // DSP core: zita-at1 0.8.2 retuner by Fons Adriaensen (GPL v3).
 #pragma once
