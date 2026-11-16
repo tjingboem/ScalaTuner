@@ -122,12 +122,20 @@ public:
     int   get_note (void) const { return _lastnote; }              // table index or -1
     float get_cycle (void) const { return _cycle; }                // period in samples
     bool  voiced (void) const { return _count < 3; }
-    // Lookahead 0, 1, 2 = delay of 1x, 2x, 4x the zita-at1 delay (21, 43, 85 ms at 48 kHz).
-    void  set_lookahead (int step)
+    // Lookahead 0..4 = delay of 1, 2, 4, 8, 16 times the zita-at1 delay
+    // (21, 43, 85, 171, 341 ms at 48 kHz). A change moves the read position at once.
+    void set_lookahead (int step)
     {
         if (step < 0) step = 0;
-        if (step > 2) step = 2;
-        _latency = _lat0 << step;
+        if (step > 4) step = 4;
+        int lat = _lat0 << step;
+        if (lat == _latency) return;
+        _latency = lat;
+        float r = (float)(_ipindex - _latency);
+        while (r < 0) r += _ipsize;
+        _rindex1 = r;
+        _rindex2 = r;
+        _xfade = false;
     }
     int   latency (void) const { return _upsamp ? _latency / 2 : _latency; }
     float get_ratio (void) const { return _ratio; }

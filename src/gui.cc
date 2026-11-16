@@ -469,7 +469,7 @@ static void on_button (Gui *g, XButtonEvent *e)
                 const Slider &s = sliders [i];
                 double n = slider_norm (s, g->p->val [s.param]) - dir * ((e->state & ShiftMask) ? 0.003 : 0.02);
                 double v = slider_value (s, n);
-                if (s.param == P_ROOT) v = lrint (g->p->val [P_ROOT]) - dir;
+                if (param_info [s.param].stepped) v = lrint (g->p->val [s.param]) - dir;   // stepped: one step per click
                 plugin_gui_param (g->p, 0, s.param, v);
                 plugin_gui_param (g->p, 1, s.param, v);
                 plugin_gui_param (g->p, 2, s.param, v);

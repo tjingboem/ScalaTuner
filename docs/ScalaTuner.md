@@ -72,7 +72,7 @@ The Settings tab holds the settings for the pitch detection. They are for fittin
 | Lowest Pitch | 50 to 500 Hz | 75 Hz | Pitches below this are not followed. |
 | Highest Pitch | 200 to 4000 Hz | 1200 Hz | Pitches above this are not followed. |
 | Threshold | -90 to -20 dB | -50 dB | Sound below this level is taken for silence. 0 dB is a full-scale sine wave. |
-| Lookahead | Off, 43 ms, 85 ms | Off | Extra delay, so that the pitch is known before a note is heard. See Delay and Lookahead, below. |
+| Lookahead | Off, 43, 85, 170, 340 ms | Off | Extra delay, so that the pitch is known before a note is heard. See Delay and Lookahead, below. |
 
 Set the range around the sound that you play in. A bass line can have the range 40 to 300 Hz, and a high flute 250 to 3000 Hz. A narrower range makes it harder for the detector to mistake a harmonic for the pitch, which is the cause of a note jumping an octave. It also keeps ScalaTuner from reacting to rumble or hiss.
 
@@ -150,11 +150,12 @@ ScalaTuner needs a little time to hear the pitch. With Lookahead off, the sound 
 
 Hearing the pitch also takes time: the detector looks at about 43 milliseconds of sound, and on a clean, steady tone it knows the pitch after about 20 milliseconds. On a sound with a noisy or inharmonic start, it takes longer. During that time the start of the note is played at its original pitch, and then the pitch moves to the grid. That is the short glide you hear at the start of a note.
 
-Lookahead removes it. It adds delay on purpose, so that the plug-in knows the pitch before it plays the start of the note. Off is the normal delay, 43 ms doubles it, 85 ms quadruples it. The setting shows the delay in milliseconds at the sample rate of the project. The host is told about the new delay and compensates for it, so tracks stay lined up; the only price is that the sound is later, which is fine for sounds that are not played live.
+Lookahead removes it. It adds delay on purpose, so that the plug-in knows the pitch before it plays the start of the note. Off is the normal delay. The other steps are 2, 4, 8 and 16 times that: 43, 85, 170 and 340 ms. The setting shows the delay in milliseconds at the sample rate of the project. The host is told about the new delay and compensates for it, so tracks stay lined up; the only price is that the sound is later, which is fine for sounds that are not played live.
 
 - Choose a longer Lookahead when the start of a note glides, or when the pitch needs time to settle at the start of a sample.
 - A change of Lookahead changes the delay of the plug-in. Some hosts need a moment to recalculate the compensation, or restart playback.
-- A very long, noisy start, such as the attack of a bell or a struck resonator, may need the longest setting, and may still not be heard as one pitch.
+- A sound with a long, noisy or inharmonic start, such as the attack of a bell or a struck resonator, may need the pitch for a quarter of a second or more before the detector is sure of it. Choose 170 or 340 ms for such a sound. Such a start may still never be heard as one pitch.
+- A change of Lookahead while the sound plays moves the playback position at once, which may be heard as a click. Set it before you play.
 
 ## Good to know
 

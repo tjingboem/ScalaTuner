@@ -34,7 +34,7 @@ const ParamInfo param_info [P_COUNT] = {
     { "Lowest Pitch",  50,   500,  75,    false },
     { "Highest Pitch", 200,  4000, 1200,  false },
     { "Threshold",     -90,  -20,  -50,   false },
-    { "Lookahead",     0,    2,    0,     true  },
+    { "Lookahead",     0,    4,    0,     true  },
 };
 
 static const char *mode_names [3] = { "Auto", "MIDI", "Manual" };
@@ -299,7 +299,7 @@ std::string plugin_param_text (Plugin *p, uint32_t id, double v)
         int base = p->sr < 64000 ? 1024 : p->sr < 128000 ? 2048 : 4096;
         int st = (int)lrint (v);
         if (st < 0) st = 0;
-        if (st > 2) st = 2;
+        if (st > 4) st = 4;
         snprintf (b, sizeof (b), st ? "%.0f ms" : "Off  %.0f ms", (base << st) * 1000.0 / p->sr);
         return b;
     }

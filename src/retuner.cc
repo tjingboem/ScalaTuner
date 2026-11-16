@@ -69,12 +69,12 @@ Retuner::Retuner (int fsamp) :
         _frsize = 512;
     }
 
-    // The input buffer is four times larger than in zita-at1, so that the delay
+    // The input buffer is sixteen times larger than in zita-at1, so that the delay
     // between input and output can be raised (lookahead): at 1x the delay is the
-    // original ipsize / 2, at 2x and 4x the pitch has been found before the
+    // original ipsize / 2, and up to 16x the pitch has been found before the
     // note is heard.
     _lat0 = _ipsize / 2;
-    _ipsize *= 4;
+    _ipsize *= 16;
 
     // Accepted correlation peak range, corresponding to 75..1200 Hz.
     _thresh = 1e-5f;  // -50 dB
