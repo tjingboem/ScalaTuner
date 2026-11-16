@@ -31,7 +31,7 @@ The window is made for hosts that embed plug-in windows on Linux (X11). In REAPE
 
 ## Choosing a scale
 
-Click a name in the list to choose that scale. Turn the mouse wheel over the list, or drag the thin bar at its right edge, to move through it. The first entry is always 12-TET.
+Click a name in the list to choose that scale. Turn the mouse wheel over the list, or drag the thin bar at its right edge, to move through it. The arrow keys step through the scales: Up chooses the scale above the current one, Down the scale below it. Page Up and Page Down move a page at a time, Home and End go to the first and the last scale. When a search has narrowed the list, the keys move through the scales that are left. Click in the window first, so that the keys reach ScalaTuner and not the host; some hosts keep the keys for themselves anyway. The first entry is always 12-TET.
 
 To find a scale, click the search box and type. The list shrinks to the names that contain what you typed; the number at the right of the box tells you how many are left. Backspace removes a letter, Escape clears the box, and Return chooses the scale if only one is left. Some hosts keep the keyboard for themselves; if typing does nothing, click the box again.
 
@@ -51,7 +51,7 @@ When ScalaTuner hears no pitch, the note name shows a dash and the bar is empty.
 
 ## The controls
 
-Click or drag a slider to set it. Turn the mouse wheel over a slider for fine steps. Double-click a slider to set it back to its default.
+Click or drag a slider to set it. Hold Shift while you drag for fine adjustment: the value then moves ten times slower than the pointer, from where it was when you pressed Shift. Turn the mouse wheel over a slider for small steps; with Shift held, the steps are smaller still. Double-click a slider to set it back to its default.
 
 | Control | Range | Default | What it does |
 |---|---|---|---|

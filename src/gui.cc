@@ -59,6 +59,9 @@ struct Gui
     bool dirty_list;
     int  page;                   // 0 main, 1 settings
     bool path_focus;             // typing into the add-folder field
+    bool drag_fine;              // slider drag with Shift held (fine, relative)
+    int  drag_x0;                // pointer x where the current drag mode started
+    double drag_n0;              // slider position (0..1) at that point
     std::string path_buf;
     std::string msg;             // short status under the field
     long msg_until;
@@ -185,12 +188,21 @@ static void draw (Gui *g, cairo_t *cr)
     // Header
     char b [256];
     text (cr, 14, 29, "ScalaTuner", 22, 0xe8ecf4);
+    // "tjingboem productions" in grey, right after the title (as in the other tjingboem plug-ins)
+    cairo_set_font_size (cr, 22);
+    cairo_text_extents_t te;
+    cairo_text_extents (cr, "ScalaTuner", &te);
+    double credit_x = 14 + te.x_advance + 4;
+    text (cr, credit_x, 29, "tjingboem productions", 10.5, 0x8c8c8c);
+    cairo_set_font_size (cr, 10.5);
+    cairo_text_extents (cr, "tjingboem productions", &te);
+    double credit_end = credit_x + te.x_advance;
     int cur = (int)lrint (p->val [P_SCALE]);
     {
         double period = g->scl.oct [g->scl.n - 1];
         snprintf (b, sizeof (b), "%s   %d notes, period %.2f cents%s", scale_name (p, cur).c_str (), g->scl.n,
-                  period * 1200.0, g->scl_ok ? "" : "   (file unreadable, using 12-TET)");
-        text (cr, 352, 28, b, 13, g->scl_ok ? 0x9fd8ff : 0xff8a7a, 2);   // centred between title and tabs
+                  period * 1200.0, g->scl_ok ? "" : "   (unreadable, using 12-TET)");
+        text (cr, (credit_end + 14 + TAB_X - 14) / 2, 28, b, 13, g->scl_ok ? 0x9fd8ff : 0xff8a7a, 2);   // centred between the credit and the tabs
     }
 
     // ---- scale browser
@@ -395,10 +407,19 @@ static int slider_at (Gui *g, int x, int y)
     return -1;
 }
 
-static void set_slider_from_x (Gui *g, int i, int x)
+// Normal drag: the value follows the pointer. With Shift held: fine adjustment,
+// the pointer moves the value ten times slower, starting from where it was.
+static void set_slider_from_x (Gui *g, int i, int x, bool shift)
 {
     const Slider &s = sliders [i];
-    double n = (double)(x - SL_X) / SL_W;
+    if (shift != g->drag_fine)
+    {
+        g->drag_fine = shift;
+        g->drag_x0 = x;
+        g->drag_n0 = slider_norm (s, g->p->val [s.param]);
+    }
+    double n = shift ? g->drag_n0 + (double)(x - g->drag_x0) / SL_W * 0.1
+                     : (double)(x - SL_X) / SL_W;
     double v = slider_value (s, n);
     if (s.param == P_ROOT) v = lrint (v);
     plugin_gui_param (g->p, 1, s.param, v);
@@ -413,6 +434,7 @@ static void choose_scale (Gui *g, int idx)
 
 static void on_button (Gui *g, XButtonEvent *e)
 {
+    XSetInputFocus (g->dpy, g->win, RevertToParent, CurrentTime);
     int x = e->x, y = e->y;
     int rows = (LH - SEARCH_H - 6) / ROW_H;
     int ry0 = LY + SEARCH_H + 6;
@@ -432,7 +454,7 @@ static void on_button (Gui *g, XButtonEvent *e)
             if (i >= 0)
             {
                 const Slider &s = sliders [i];
-                double n = slider_norm (s, g->p->val [s.param]) - dir * 0.02;
+                double n = slider_norm (s, g->p->val [s.param]) - dir * ((e->state & ShiftMask) ? 0.003 : 0.02);
                 double v = slider_value (s, n);
                 if (s.param == P_ROOT) v = lrint (g->p->val [P_ROOT]) - dir;
                 plugin_gui_param (g->p, 0, s.param, v);
@@ -516,8 +538,9 @@ static void on_button (Gui *g, XButtonEvent *e)
         g->last_click_slider = i;
         g->last_click_ms = t;
         g->drag = i;
+        g->drag_fine = !(e->state & ShiftMask);   // forces a re-anchor in set_slider_from_x
         plugin_gui_param (g->p, 0, s.param, g->p->val [s.param]);
-        set_slider_from_x (g, i, x);
+        set_slider_from_x (g, i, x, (e->state & ShiftMask) != 0);
         return;
     }
     // mode buttons
@@ -538,7 +561,7 @@ static void on_button (Gui *g, XButtonEvent *e)
 
 static void on_motion (Gui *g, XMotionEvent *e)
 {
-    if (g->drag >= 0) set_slider_from_x (g, g->drag, e->x);
+    if (g->drag >= 0) set_slider_from_x (g, g->drag, e->x, (e->state & ShiftMask) != 0);
     else if (g->dragging_scroll)
     {
         int rows = (LH - SEARCH_H - 6) / ROW_H;
@@ -554,6 +577,33 @@ static void on_key (Gui *g, XKeyEvent *e)
     char buf [16];
     KeySym ks;
     int n = XLookupString (e, buf, sizeof (buf) - 1, &ks, 0);
+
+    // Up/Down (and Page Up/Down, Home/End) step through the scale list shown
+    // (all scales, or the ones left by the search).
+    if (!g->path_focus && (ks == XK_Up || ks == XK_Down || ks == XK_Page_Up || ks == XK_Page_Down ||
+                           ks == XK_Home || ks == XK_End) && !g->shown.empty ())
+    {
+        int rows = (LH - SEARCH_H - 6) / ROW_H;
+        int cur = (int)lrint (g->p->val [P_SCALE]);
+        int pos = -1;
+        for (size_t i = 0; i < g->shown.size (); i++)
+            if (g->shown [i] == cur) { pos = (int)i; break; }
+        int np;
+        if (ks == XK_Home) np = 0;
+        else if (ks == XK_End) np = (int)g->shown.size () - 1;
+        else
+        {
+            int step = ks == XK_Up ? -1 : ks == XK_Down ? 1 : ks == XK_Page_Up ? -rows : rows;
+            if (pos < 0) np = step < 0 ? (int)g->shown.size () - 1 : 0;   // current scale is filtered out
+            else np = pos + step;
+        }
+        np = std::max (0, std::min ((int)g->shown.size () - 1, np));
+        if (np != pos) choose_scale (g, g->shown [np]);
+        if (np < g->scroll) g->scroll = np;
+        else if (np >= g->scroll + rows) g->scroll = np - rows + 1;
+        rebuild_list (g);
+        return;
+    }
     if (g->path_focus)
     {
         bool ctrl = e->state & ControlMask;
@@ -645,6 +695,9 @@ static bool gui_create (const clap_plugin_t *pl, const char *api, bool floating)
     g->drag = -1;
     g->page = 0;
     g->path_focus = false;
+    g->drag_fine = false;
+    g->drag_x0 = 0;
+    g->drag_n0 = 0;
     g->msg_until = 0;
     g->last_click_slider = -1;
     g->last_click_ms = 0;
