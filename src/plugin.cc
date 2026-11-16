@@ -5,6 +5,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <sys/stat.h>
 #include <unistd.h>
 
 static std::mutex fftw_lock;   // the FFTW planner is not thread-safe
@@ -35,32 +36,76 @@ void note_name (int m, char *buf, size_t n)
 // ----------------------------------------------------------------------------
 // Scale list and loader
 
-static std::string find_scale_dir (void)
+static std::string home_dir (void)
 {
     const char *home = getenv ("HOME");
-    std::string h = home ? home : "";
+    return home ? home : "";
+}
+
+static std::string config_file (void) { return home_dir () + "/.config/scalatuner/scales_dir"; }
+
+static bool is_dir (const std::string &d)
+{
+    DIR *dd = opendir (d.c_str ());
+    if (!dd) return false;
+    closedir (dd);
+    return true;
+}
+
+static std::string clean_path (std::string s)
+{
+    size_t a = s.find_first_not_of (" \t\r\n"), b = s.find_last_not_of (" \t\r\n");
+    s = a == std::string::npos ? "" : s.substr (a, b - a + 1);
+    if (s.size () >= 2 && s [0] == '~' && s [1] == '/') s = home_dir () + s.substr (1);
+    else if (s == "~") s = home_dir ();
+    while (s.size () > 1 && s.back () == '/') s.pop_back ();
+    return s;
+}
+
+static void load_dir_settings (Plugin *p)
+{
+    p->env_dirs.clear ();
+    p->cfg_dirs.clear ();
     const char *env = getenv ("SCALATUNER_SCALES");
-    if (env && *env) return env;
-    // ~/.config/scalatuner/scales_dir holds a path
-    FILE *f = fopen ((h + "/.config/scalatuner/scales_dir").c_str (), "r");
-    if (f)
+    if (env && *env)
     {
-        char line [1024];
-        if (fgets (line, sizeof (line), f))
+        std::string e = env;
+        size_t pos = 0;
+        while (pos <= e.size ())
         {
-            line [strcspn (line, "\r\n")] = 0;
-            fclose (f);
-            if (*line) return line;
+            size_t c = e.find (':', pos);
+            if (c == std::string::npos) c = e.size ();
+            std::string d = clean_path (e.substr (pos, c - pos));
+            if (!d.empty ()) p->env_dirs.push_back (d);
+            pos = c + 1;
         }
-        else fclose (f);
     }
+    if (FILE *f = fopen (config_file ().c_str (), "r"))
+    {
+        char line [2048];
+        while (fgets (line, sizeof (line), f))
+        {
+            std::string d = clean_path (line);
+            if (!d.empty () && d [0] != '#') p->cfg_dirs.push_back (d);
+        }
+        fclose (f);
+    }
+    p->def_dir.clear ();
     const char *cand [] = { "/scl", "/scales", "/.scala/scl" };
     for (const char *c : cand)
+        if (is_dir (home_dir () + c)) { p->def_dir = home_dir () + c; break; }
+}
+
+static void save_dir_settings (Plugin *p)
+{
+    std::string dir = home_dir () + "/.config/scalatuner";
+    mkdir ((home_dir () + "/.config").c_str (), 0755);
+    mkdir (dir.c_str (), 0755);
+    if (FILE *f = fopen (config_file ().c_str (), "w"))
     {
-        std::string d = h + c;
-        if (DIR *dd = opendir (d.c_str ())) { closedir (dd); return d; }
+        for (auto &d : p->cfg_dirs) fprintf (f, "%s\n", d.c_str ());
+        fclose (f);
     }
-    return h + "/scl";
 }
 
 static std::string lower (std::string s)
@@ -71,42 +116,108 @@ static std::string lower (std::string s)
 
 static void scan_scales (Plugin *p)
 {
-    p->dir = find_scale_dir ();
-    p->names.clear ();
-    if (DIR *d = opendir (p->dir.c_str ()))
+    // Folders in use: environment, then the config file, then the default folder.
+    std::vector<std::string> dirs;
+    auto add = [&] (const std::string &d) {
+        if (!d.empty () && std::find (dirs.begin (), dirs.end (), d) == dirs.end ()) dirs.push_back (d);
+    };
+    for (auto &d : p->env_dirs) add (d);
+    for (auto &d : p->cfg_dirs) add (d);
+    add (p->def_dir);
+    if (dirs.empty ()) add (home_dir () + "/scl");
+
+    struct E { std::string name, path; };
+    std::vector<E> all;
+    std::vector<int> counts;
+    for (auto &dir : dirs)
     {
+        int cnt = 0;
+        DIR *d = opendir (dir.c_str ());
+        if (!d) { counts.push_back (-1); continue; }
         while (struct dirent *e = readdir (d))
         {
             size_t l = strlen (e->d_name);
             if (l > 4 && !strcasecmp (e->d_name + l - 4, ".scl"))
-                p->names.push_back (std::string (e->d_name, l - 4));
+                { all.push_back ({ std::string (e->d_name, l - 4), dir + "/" + e->d_name }); cnt++; }
         }
         closedir (d);
+        counts.push_back (cnt);
     }
-    std::sort (p->names.begin (), p->names.end (), [] (const std::string &a, const std::string &b) {
-        std::string la = lower (a), lb = lower (b);
-        return la != lb ? la < lb : a < b;
+    std::sort (all.begin (), all.end (), [] (const E &a, const E &b) {
+        std::string la = lower (a.name), lb = lower (b.name);
+        if (la != lb) return la < lb;
+        if (a.name != b.name) return a.name < b.name;
+        return a.path < b.path;
     });
+    std::lock_guard<std::mutex> lk (p->names_mtx);
+    p->dirs = dirs;
+    p->dir_counts = counts;
+    p->names.clear ();
+    p->paths.clear ();
+    for (auto &e : all) { p->names.push_back (e.name); p->paths.push_back (e.path); }
     p->nscales = (int)p->names.size ();
+}
+
+// Rescan after the folder list changed; keep the current scale selected by name.
+static void rescan_keep_scale (Plugin *p)
+{
+    int cur = (int)lrint (p->val [P_SCALE]);
+    std::string curpath;
+    {
+        std::lock_guard<std::mutex> lk (p->names_mtx);
+        if (cur > 0 && cur <= (int)p->paths.size ()) curpath = p->paths [cur - 1];
+    }
+    scan_scales (p);
+    int idx = 0;
+    {
+        std::lock_guard<std::mutex> lk (p->names_mtx);
+        for (int i = 0; i < (int)p->paths.size (); i++)
+            if (p->paths [i] == curpath) { idx = i + 1; break; }
+    }
+    p->val [P_SCALE] = idx;
+    if (p->host_params)
+        p->host_params->rescan (p->host, CLAP_PARAM_RESCAN_INFO | CLAP_PARAM_RESCAN_VALUES | CLAP_PARAM_RESCAN_TEXT);
+}
+
+bool plugin_add_dir (Plugin *p, const std::string &raw, std::string *err)
+{
+    std::string d = clean_path (raw);
+    if (d.empty ()) { *err = "empty path"; return false; }
+    if (!is_dir (d)) { *err = "not a folder"; return false; }
+    for (auto &x : p->cfg_dirs) if (x == d) { *err = "already added"; return false; }
+    p->cfg_dirs.push_back (d);
+    save_dir_settings (p);
+    rescan_keep_scale (p);
+    return true;
+}
+
+void plugin_remove_dir (Plugin *p, int i)
+{
+    if (i < 0 || i >= (int)p->cfg_dirs.size ()) return;
+    p->cfg_dirs.erase (p->cfg_dirs.begin () + i);
+    save_dir_settings (p);
+    rescan_keep_scale (p);
 }
 
 static void loader_main (Plugin *p)
 {
     int loaded = -1;
+    std::string loaded_path;
     while (!p->quit)
     {
         int want = (int)lrint (p->val [P_SCALE]);
-        if (want < 0 || want > p->nscales) want = 0;
-        if (want != loaded)
+        std::string path;
+        {
+            std::lock_guard<std::mutex> lk (p->names_mtx);
+            if (want < 0 || want > (int)p->paths.size ()) want = 0;
+            if (want > 0) path = p->paths [want - 1];
+        }
+        if (want != loaded || path != loaded_path)
         {
             Scl *tmp = new Scl;
             bool ok = true;
             if (want == 0) tmp->twelve_tet ();
-            else
-            {
-                std::string path = p->dir + "/" + p->names [want - 1] + ".scl";
-                if (!scl_load (path.c_str (), tmp)) { tmp->twelve_tet (); ok = false; }
-            }
+            else if (!scl_load (path.c_str (), tmp)) { tmp->twelve_tet (); ok = false; }
             {
                 std::lock_guard<std::mutex> lk (p->mtx);
                 p->cur = *tmp;
@@ -116,6 +227,7 @@ static void loader_main (Plugin *p)
             }
             delete tmp;
             loaded = want;
+            loaded_path = path;
         }
         usleep (20000);
     }
@@ -375,6 +487,7 @@ static bool plug_init (const clap_plugin_t *pl)
     Plugin *p = (Plugin *)pl->plugin_data;
     p->host_params = (const clap_host_params_t *)p->host->get_extension (p->host, CLAP_EXT_PARAMS);
     p->host_latency = (const clap_host_latency_t *)p->host->get_extension (p->host, CLAP_EXT_LATENCY);
+    load_dir_settings (p);
     scan_scales (p);
     p->quit = false;
     p->loader = std::thread (loader_main, p);
@@ -594,7 +707,7 @@ static void plug_on_main_thread (const clap_plugin_t *) {}
 static const char *features [] = { CLAP_PLUGIN_FEATURE_AUDIO_EFFECT, CLAP_PLUGIN_FEATURE_PITCH_CORRECTION, CLAP_PLUGIN_FEATURE_STEREO, nullptr };
 
 static const clap_plugin_descriptor_t descriptor = {
-    CLAP_VERSION, "org.tjingboem.scalatuner", "ScalaTuner", "tjingboem",
+    CLAP_VERSION, "org.tjingboem.scalatuner", "ScalaTuner", "tjingboem productions",
     "", "", "",
     "0.1.0",
     "Stereo autotuner that snaps pitch to Scala (.scl) scales. Core: zita-at1 by Fons Adriaensen.",

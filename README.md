@@ -27,13 +27,12 @@ matching step was replaced, with a 128-note lookup table built from the scale.
 See [`docs/ScalaTuner.odt`](docs/ScalaTuner.odt) (source text: `docs/ScalaTuner.md`; rebuilt with `tools/make_manual.py`).
 
 ## Where the scales come from
-In this order:
-1. the `SCALATUNER_SCALES` environment variable
-2. the path in the file `~/.config/scalatuner/scales_dir`
-3. `~/scl`, `~/scales` or `~/.scala/scl`
+Several folders can be used at once; all their scales appear in one list:
+1. folders in the `SCALATUNER_SCALES` environment variable (separated by `:`)
+2. folders you add on the plug-in's Settings page, stored one per line in `~/.config/scalatuner/scales_dir`
+3. the first of `~/scl`, `~/scales`, `~/.scala/scl` that exists
 
-The scale list is read when the plugin is created. A good source is the Scala scale archive
-(about 5000 `.scl` files).
+A good source is the Scala scale archive (about 5000 `.scl` files).
 
 ## Build (Linux, X11)
 Needs a C++ compiler, `fftw3f`, `x11` and `cairo` development packages.

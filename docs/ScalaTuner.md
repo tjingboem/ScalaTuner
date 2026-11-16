@@ -12,13 +12,13 @@ The pitch tracking and the resynthesis are the zita-at1 autotuner by Fons Adriae
 
 ## Getting the scales
 
-ScalaTuner reads the scale files while it runs. It looks for a folder in this order:
+ScalaTuner reads the scale files while it runs. It can use several folders at once, and shows the scales of all of them in one list. The folders come from three places:
 
-- the environment variable SCALATUNER_SCALES, if it is set;
-- the path written in the file ~/.config/scalatuner/scales_dir;
-- the folders ~/scl, ~/scales and ~/.scala/scl.
+- the environment variable SCALATUNER_SCALES, if it is set; several folders are separated by a colon;
+- the folders that you add on the Settings page; they are kept in the file ~/.config/scalatuner/scales_dir, one folder per line;
+- a standard folder: the first of ~/scl, ~/scales and ~/.scala/scl that exists.
 
-Put your .scl files in the first one that exists, or write the path of your own folder into scales_dir. The Scala scale archive, about 5000 files, works well. The list is read when the plug-in is loaded, so after adding files, load the plug-in again.
+The Scala scale archive, about 5000 files, works well in ~/scl. To use your own scales as well, put them in a folder of your own and add that folder as described under Settings. Scales in all folders are sorted together by name.
 
 If no folder is found, the list holds only 12-TET, the ordinary equal-tempered scale.
 
@@ -78,7 +78,13 @@ The detector cannot hear below about 47 Hz, whatever the setting, and Highest Pi
 
 Raise the Threshold if background noise or the tail of a note makes ScalaTuner jump about. Lower it for a very quiet recording, so that soft notes are followed too.
 
-The Settings page also shows which folder the scales are read from and how many files it holds. To change the folder, see Getting the scales.
+The Settings page also holds the scale folders. Under SCALE FOLDERS it lists every folder in use, and how many scale files they hold together.
+
+- To add a folder, click the field at the bottom, type the path (a path starting with ~/ is fine) or paste it with Ctrl+V, and press Return. If the folder exists, its scales appear in the list at once, and the scale you were using stays selected. If it does not, the field shows a short message in red. Some hosts keep the keyboard for themselves; if typing does nothing, click the field again.
+- To remove a folder that you added, click the x at the right of its line. The files are not touched.
+- Folders from the environment variable and the standard folder have no x. They are not part of the file in ~/.config.
+
+The folders are the same for every ScalaTuner in the project and in other projects. The scale a project uses is saved by name; if the file is no longer there when the project is opened, ScalaTuner uses 12-TET.
 
 All three settings can be automated by the host, like the sliders on the Main page.
 
@@ -124,7 +130,7 @@ ScalaTuner needs a little time to hear the pitch. The sound comes out 1024 sampl
 - It hears pitches between 75 and 1200 Hz, and a sound below -50 dB is taken for silence. Both can be changed on the Settings page. Noise without a clear pitch is left alone.
 - On a scale with few notes, such as 5 or 7 per octave, the jumps between notes are large. The meter bar can stay at its end while a note is far from the next one. That is not a fault.
 - The sound is changed by playing it faster or slower between cuts, as in a tape machine, with short cross-fades. Very large corrections, and unvoiced sounds like consonants, are the places where this can be heard.
-- The scale list is read when the plug-in is loaded, and the scale is read from its file when it is chosen. A very large file with more than 1000 notes is not accepted; the plug-in uses 12-TET and shows a warning in red next to the scale name.
+- The scale list is read when the plug-in is loaded and whenever you add or remove a folder, and a scale is read from its file when it is chosen. A very large file with more than 1000 notes is not accepted; the plug-in uses 12-TET and shows a warning in red next to the scale name.
 - All sliders, the Mode and the Settings can be automated by the host. The Scale can be automated as well; its value is its place in the list.
 
 ## Credits

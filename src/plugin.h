@@ -46,8 +46,14 @@ struct Plugin
     int nscales;                         // number of scale files; param max = nscales
 
     // Scale list: names [i] is scale index i + 1; index 0 is 12-TET.
-    std::string              dir;
-    std::vector<std::string> names;
+    std::vector<std::string> env_dirs;   // from SCALATUNER_SCALES (not editable here)
+    std::vector<std::string> cfg_dirs;   // from ~/.config/scalatuner/scales_dir (editable in the GUI)
+    std::string              def_dir;    // built-in fallback folder, if it exists
+    std::vector<std::string> dirs;       // all folders in use
+    std::vector<int>         dir_counts; // number of .scl files in each of dirs
+    std::vector<std::string> names;      // scale names
+    std::vector<std::string> paths;      // full file path of each name
+    std::mutex               names_mtx;  // guards names/paths against the loader thread
 
     // Currently loaded scale (loader thread writes, audio try_locks).
     std::mutex   mtx;
@@ -88,6 +94,10 @@ struct Plugin
 void plugin_gui_param (Plugin *p, int kind, uint32_t id, double value);
 std::string plugin_param_text (Plugin *p, uint32_t id, double value);
 void note_name (int midi, char *buf, size_t n);
+
+// Scale folders (GUI thread). Return false and set *err on failure.
+bool plugin_add_dir (Plugin *p, const std::string &path, std::string *err);
+void plugin_remove_dir (Plugin *p, int cfg_index);
 
 // Implemented in gui.cc
 const clap_plugin_gui_t           *gui_extension (void);

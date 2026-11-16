@@ -3,6 +3,7 @@
 #include <X11/Xlib.h>
 #include <X11/Xutil.h>
 #include <X11/keysym.h>
+#include <X11/Xatom.h>
 #include <cairo/cairo-xlib.h>
 #include <algorithm>
 #include <math.h>
@@ -57,6 +58,10 @@ struct Gui
     long last_click_ms;
     bool dirty_list;
     int  page;                   // 0 main, 1 settings
+    bool path_focus;             // typing into the add-folder field
+    std::string path_buf;
+    std::string msg;             // short status under the field
+    long msg_until;
 
     // cached current scale for drawing
     Scl     scl;
@@ -247,15 +252,38 @@ static void draw (Gui *g, cairo_t *cr)
             col (cr, g->drag == i ? 0x7fd6ff : 0x4aa8e0); rrect (cr, SL_X, s.y, std::max (6.0, n * SL_W), SL_H, 4); cairo_fill (cr);
             text (cr, RX + RW - 12, s.y + 9, plugin_param_text (p, s.param, v).c_str (), 12, 0xe8ecf4, 1);
         }
-        col (cr, 0x1d2027); rrect (cr, RX, 226, RW, 120, 6); cairo_fill (cr);
-        text (cr, RX + 12, 248, "SCALES", 11, 0x6c7380);
-        text (cr, RX + 12, 274, "Folder", 13, 0xc4cad6);
-        std::string d = p->dir;
-        if (d.size () > 44) d = "..." + d.substr (d.size () - 41);
-        text (cr, SL_X, 274, d.c_str (), 12, 0xe8ecf4);
-        text (cr, RX + 12, 302, "Files", 13, 0xc4cad6);
-        snprintf (b, sizeof (b), "%d", p->nscales);
-        text (cr, SL_X, 302, b, 12, 0xe8ecf4);
+        col (cr, 0x1d2027); rrect (cr, RX, 226, RW, 208, 6); cairo_fill (cr);
+        snprintf (b, sizeof (b), "SCALE FOLDERS   %d files", p->nscales);
+        text (cr, RX + 12, 248, b, 11, 0x6c7380);
+        int ncfg = (int)p->cfg_dirs.size ();
+        for (size_t i = 0; i < p->dirs.size () && i < 5; i++)
+        {
+            int y = 262 + (int)i * 24;
+            std::string d = p->dirs [i];
+            if (d.size () > 38) d = "..." + d.substr (d.size () - 35);
+            bool removable = false;
+            for (auto &c : p->cfg_dirs) if (c == p->dirs [i]) removable = true;
+            text (cr, RX + 12, y + 16, d.c_str (), 12, 0xe8ecf4);
+            int cnt = i < p->dir_counts.size () ? p->dir_counts [i] : 0;
+            if (cnt >= 0) snprintf (b, sizeof (b), "%d files", cnt); else snprintf (b, sizeof (b), "not found");
+            text (cr, RX + RW - (removable ? 42 : 16), y + 16, b, 12, cnt >= 0 ? 0x9fd8ff : 0xff8a7a, 1);
+            if (removable)
+            {
+                col (cr, 0x2a2e37); rrect (cr, RX + RW - 34, y + 2, 22, 20, 4); cairo_fill (cr);
+                text (cr, RX + RW - 23, y + 17, "x", 13, 0xc4cad6, 2);
+            }
+        }
+        (void)ncfg;
+        col (cr, g->path_focus ? 0x2c3340 : 0x242830); rrect (cr, RX + 12, 392, RW - 24, 26, 4); cairo_fill (cr);
+        if (g->path_buf.empty () && !g->path_focus) text (cr, RX + 22, 410, "add folder: type or paste path, Return", 13, 0x6c7380);
+        else
+        {
+            std::string t = g->path_buf;
+            if (t.size () > 50) t = "..." + t.substr (t.size () - 47);
+            text (cr, RX + 22, 410, (t + (g->path_focus ? "|" : "")).c_str (), 13, 0xe8ecf4);
+        }
+        if (!g->msg.empty () && now_ms () < g->msg_until)
+            text (cr, RX + 12, 430, g->msg.c_str (), 11, 0xff8a7a);
         return;
     }
 
@@ -428,6 +456,7 @@ static void on_button (Gui *g, XButtonEvent *e)
         if (y < ry0)
         {
             g->search_focus = true;
+            g->path_focus = false;
             XSetInputFocus (g->dpy, g->win, RevertToParent, CurrentTime);
         }
         else if (x > LX + LW - 16 && (int)g->shown.size () > rows)
@@ -443,6 +472,32 @@ static void on_button (Gui *g, XButtonEvent *e)
             g->search_focus = false;
         }
         return;
+    }
+
+    if (g->page == 1)
+    {
+        // folder remove buttons
+        for (size_t i = 0; i < g->p->dirs.size () && i < 5; i++)
+        {
+            int ry = 262 + (int)i * 24;
+            if (x >= RX + RW - 34 && x < RX + RW - 12 && y >= ry + 2 && y < ry + 22)
+                for (size_t c = 0; c < g->p->cfg_dirs.size (); c++)
+                    if (g->p->cfg_dirs [c] == g->p->dirs [i])
+                    {
+                        plugin_remove_dir (g->p, (int)c);
+                        rebuild_list (g);
+                        scroll_to_selected (g);
+                        return;
+                    }
+        }
+        if (x >= RX + 12 && x < RX + RW - 12 && y >= 392 && y < 418)
+        {
+            g->path_focus = true;
+            g->search_focus = false;
+            XSetInputFocus (g->dpy, g->win, RevertToParent, CurrentTime);
+            return;
+        }
+        g->path_focus = false;
     }
 
     int i = slider_at (g, x, y);
@@ -496,10 +551,36 @@ static void on_motion (Gui *g, XMotionEvent *e)
 
 static void on_key (Gui *g, XKeyEvent *e)
 {
-    if (!g->search_focus) return;
     char buf [16];
     KeySym ks;
     int n = XLookupString (e, buf, sizeof (buf) - 1, &ks, 0);
+    if (g->path_focus)
+    {
+        bool ctrl = e->state & ControlMask;
+        if (ks == XK_BackSpace) { if (!g->path_buf.empty ()) g->path_buf.pop_back (); }
+        else if (ks == XK_Escape) { g->path_buf.clear (); g->path_focus = false; }
+        else if (ks == XK_Return || ks == XK_KP_Enter)
+        {
+            std::string err;
+            if (plugin_add_dir (g->p, g->path_buf, &err))
+            {
+                g->path_buf.clear ();
+                g->msg.clear ();
+                rebuild_list (g);
+                scroll_to_selected (g);
+            }
+            else { g->msg = err; g->msg_until = now_ms () + 4000; }
+        }
+        else if ((ctrl && (ks == XK_v || ks == XK_V)) || (ks == XK_Insert && (e->state & ShiftMask)))
+        {
+            Atom sel = ks == XK_Insert ? XA_PRIMARY : XInternAtom (g->dpy, "CLIPBOARD", False);
+            XConvertSelection (g->dpy, sel, XInternAtom (g->dpy, "UTF8_STRING", False),
+                               XInternAtom (g->dpy, "SCALATUNER_PASTE", False), g->win, CurrentTime);
+        }
+        else if (!ctrl && n > 0 && (unsigned char)buf [0] >= 32 && buf [0] != 127) g->path_buf.append (buf, n);
+        return;
+    }
+    if (!g->search_focus) return;
     if (ks == XK_BackSpace) { if (!g->filter.empty ()) g->filter.pop_back (); }
     else if (ks == XK_Escape) { g->filter.clear (); g->search_focus = false; }
     else if (ks == XK_Return && g->shown.size () == 1) { choose_scale (g, g->shown [0]); }
@@ -563,6 +644,8 @@ static bool gui_create (const clap_plugin_t *pl, const char *api, bool floating)
     g->dragging_scroll = false;
     g->drag = -1;
     g->page = 0;
+    g->path_focus = false;
+    g->msg_until = 0;
     g->last_click_slider = -1;
     g->last_click_ms = 0;
     g->scl.twelve_tet ();
@@ -688,6 +771,21 @@ static void gui_on_timer (const clap_plugin_t *pl, clap_id)
             on_motion (g, &ev.xmotion);
             break;
         case KeyPress: on_key (g, &ev.xkey); break;
+        case SelectionNotify:
+        {
+            Atom prop = XInternAtom (g->dpy, "SCALATUNER_PASTE", False);
+            if (ev.xselection.property == prop)
+            {
+                Atom type; int fmt; unsigned long n, after; unsigned char *data = 0;
+                if (XGetWindowProperty (g->dpy, g->win, prop, 0, 4096, True, AnyPropertyType, &type, &fmt, &n, &after, &data) == Success && data)
+                {
+                    for (unsigned long k = 0; k < n; k++)
+                        if (data [k] >= 32 && data [k] != 127) g->path_buf.push_back ((char)data [k]);
+                    XFree (data);
+                }
+            }
+            break;
+        }
         default: break;
         }
     }
