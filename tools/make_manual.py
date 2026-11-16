@@ -18,7 +18,7 @@ src, dst = sys.argv[1], sys.argv[2]
 month = sys.argv[3] if len(sys.argv) > 3 else datetime.date.today().strftime('%B %Y')
 
 lines = open(src, encoding='utf8').read().split('\n')
-title = 'ScalaTune'
+title = 'ScalaTuner'
 blocks = []   # ('h1'|'h2'|'p'|'ul'|'table', data)
 i = 0
 while i < len(lines):

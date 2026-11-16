@@ -1,4 +1,4 @@
-// ScalaTune GUI: plain Xlib + cairo, embedded into the host via CLAP gui (x11).
+// ScalaTuner GUI: plain Xlib + cairo, embedded into the host via CLAP gui (x11).
 #include "plugin.h"
 #include <X11/Xlib.h>
 #include <X11/Xutil.h>
@@ -174,7 +174,7 @@ static void draw (Gui *g, cairo_t *cr)
 
     // Header
     char b [256];
-    text (cr, 14, 28, "ScalaTune", 20, 0xe8ecf4);
+    text (cr, 14, 28, "ScalaTuner", 20, 0xe8ecf4);
     int cur = (int)lrint (p->val [P_SCALE]);
     {
         double period = g->scl.oct [g->scl.n - 1];
@@ -485,7 +485,7 @@ static void make_window (Gui *g, Window parent)
                             CopyFromParent, InputOutput, CopyFromParent, CWBackPixel | CWEventMask, &a);
     if (!parent)
     {
-        XStoreName (g->dpy, g->win, "ScalaTune");
+        XStoreName (g->dpy, g->win, "ScalaTuner");
         XSizeHints *sh = XAllocSizeHints ();
         sh->flags = PMinSize | PMaxSize;
         sh->min_width = sh->max_width = W;

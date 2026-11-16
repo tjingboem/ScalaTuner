@@ -1,6 +1,6 @@
 # ScalaTuner
 
-**ScalaTune** is a stereo CLAP autotuner that pulls the pitch of a sound onto a
+**ScalaTuner** is a stereo CLAP autotuner that pulls the pitch of a sound onto a
 [Scala](https://www.huygens-fokker.org/scala/) (`.scl`) scale: any number of notes per period,
 any period (octave, tritave, ...). The left and right channels are tuned independently.
 It has its own GUI, with a scale browser that reads your `.scl` files at runtime.
@@ -24,12 +24,12 @@ matching step was replaced, with a 128-note lookup table built from the scale.
 - Saves the scale by name, so projects survive re-ordering of your scale folder
 
 ## Manual
-See [`docs/ScalaTune.odt`](docs/ScalaTune.odt) (source text: `docs/ScalaTune.md`; rebuilt with `tools/make_manual.py`).
+See [`docs/ScalaTuner.odt`](docs/ScalaTuner.odt) (source text: `docs/ScalaTuner.md`; rebuilt with `tools/make_manual.py`).
 
 ## Where the scales come from
 In this order:
-1. the `SCALATUNE_SCALES` environment variable
-2. the path in the file `~/.config/scalatune/scales_dir`
+1. the `SCALATUNER_SCALES` environment variable
+2. the path in the file `~/.config/scalatuner/scales_dir`
 3. `~/scl`, `~/scales` or `~/.scala/scl`
 
 The scale list is read when the plugin is created. A good source is the Scala scale archive
@@ -40,7 +40,7 @@ Needs a C++ compiler, `fftw3f`, `x11` and `cairo` development packages.
 
 ```
 make
-cp build/ScalaTune.clap ~/.clap/
+cp build/ScalaTuner.clap ~/.clap/
 ```
 
 The CLAP headers are included in `include/`. It was developed and tested against REAPER on Linux Mint 22.
@@ -55,4 +55,4 @@ interaction). Listening tests on real voices and testing in more hosts are still
 - Resampler: from Fons Adriaensen's zita-resampler, via x42's fat1.lv2 (GPL)
 - CLAP headers: free-audio/clap, MIT (see `include/CLAP-LICENSE`)
 
-ScalaTune is distributed under the **GNU General Public License v3** (see `COPYING`).
+ScalaTuner is distributed under the **GNU General Public License v3** (see `COPYING`).

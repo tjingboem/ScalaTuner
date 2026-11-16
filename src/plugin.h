@@ -1,4 +1,4 @@
-// ScalaTune: stereo autotuner snapping to Scala (.scl) scales. CLAP plugin.
+// ScalaTuner: stereo autotuner snapping to Scala (.scl) scales. CLAP plugin.
 // DSP core: zita-at1 0.8.2 retuner by Fons Adriaensen (GPL v3).
 #pragma once
 #include <atomic>

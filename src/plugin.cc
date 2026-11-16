@@ -36,10 +36,10 @@ static std::string find_scale_dir (void)
 {
     const char *home = getenv ("HOME");
     std::string h = home ? home : "";
-    const char *env = getenv ("SCALATUNE_SCALES");
+    const char *env = getenv ("SCALATUNER_SCALES");
     if (env && *env) return env;
-    // ~/.config/scalatune/scales_dir holds a path
-    FILE *f = fopen ((h + "/.config/scalatune/scales_dir").c_str (), "r");
+    // ~/.config/scalatuner/scales_dir holds a path
+    FILE *f = fopen ((h + "/.config/scalatuner/scales_dir").c_str (), "r");
     if (f)
     {
         char line [1024];
@@ -509,7 +509,7 @@ static clap_process_status plug_process (const clap_plugin_t *pl, const clap_pro
 static bool state_save (const clap_plugin_t *pl, const clap_ostream_t *s)
 {
     Plugin *p = (Plugin *)pl->plugin_data;
-    std::string t = "scalatune 1\n";
+    std::string t = "scalatuner 1\n";
     char b [256];
     int si = (int)lrint (p->val [P_SCALE]);
     t += "scale=" + std::string (si > 0 && si <= p->nscales ? p->names [si - 1] : "12-TET") + "\n";
@@ -586,7 +586,7 @@ static void plug_on_main_thread (const clap_plugin_t *) {}
 static const char *features [] = { CLAP_PLUGIN_FEATURE_AUDIO_EFFECT, CLAP_PLUGIN_FEATURE_PITCH_CORRECTION, CLAP_PLUGIN_FEATURE_STEREO, nullptr };
 
 static const clap_plugin_descriptor_t descriptor = {
-    CLAP_VERSION, "org.tjingboem.scalatune", "ScalaTune", "tjingboem",
+    CLAP_VERSION, "org.tjingboem.scalatuner", "ScalaTuner", "tjingboem",
     "", "", "",
     "0.1.0",
     "Stereo autotuner that snaps pitch to Scala (.scl) scales. Core: zita-at1 by Fons Adriaensen.",

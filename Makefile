@@ -8,9 +8,9 @@ GUI_CFLAGS = $(shell pkg-config --cflags x11 cairo)
 DSP = src/plugin.cc src/retuner.cc src/resampler.cc src/resampler-table.cc
 DEPS = $(wildcard src/*.h src/*.cc)
 
-all: build/ScalaTune.clap
+all: build/ScalaTuner.clap
 
-build/ScalaTune.clap: $(DEPS) Makefile
+build/ScalaTuner.clap: $(DEPS) Makefile
 	@mkdir -p build
 	$(CXX) $(CXXFLAGS) $(GUI_CFLAGS) -shared -o $@ $(DSP) src/gui.cc $(LIBS) $(GUI_LIBS)
 
