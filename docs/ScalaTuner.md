@@ -24,7 +24,7 @@ If no folder is found, the list holds only 12-TET, the ordinary equal-tempered s
 
 ## The window
 
-The window has the scale list on the left. On the right, from the top: the grid strip, the two pitch meters, the sliders and the Mode buttons. At the top, next to the name, a line gives the name of the current scale, how many notes it has and the size of its period in cents.
+The window has the scale list on the left. On the right, two tabs at the top choose the page. The Main page shows, from the top, the grid strip, the two pitch meters, the sliders and the Mode buttons. The Settings page holds the pitch detection settings; see Settings, below. At the top, next to the name, a line gives the name of the current scale, how many notes it has and the size of its period in cents.
 
 The window is made for hosts that embed plug-in windows on Linux (X11). In REAPER, for example, it opens from the plug-in in the FX chain. If a host shows only a plain list of sliders instead, use that host's button for the plug-in's own interface.
 
@@ -62,6 +62,32 @@ Click or drag a slider to set it. Turn the mouse wheel over a slider for fine st
 | Offset | -2 to +2 semitones | 0 | Moves the result up or down. With Correction at 0 %, it is a plain pitch shift. |
 | Mode | Auto, MIDI, Manual | Auto | Where the target notes come from. See below. |
 
+## Settings
+
+The Settings tab holds the settings for the pitch detection. They are for fitting ScalaTuner to the sound, and most of the time they can stay as they are.
+
+| Control | Range | Default | What it does |
+|---|---|---|---|
+| Lowest Pitch | 50 to 500 Hz | 75 Hz | Pitches below this are not followed. |
+| Highest Pitch | 200 to 4000 Hz | 1200 Hz | Pitches above this are not followed. |
+| Threshold | -90 to -20 dB | -50 dB | Sound below this level is taken for silence. 0 dB is a full-scale sine wave. |
+
+Set the range around the sound that you play in. A bass line can have the range 40 to 300 Hz, and a high flute 250 to 3000 Hz. A narrower range makes it harder for the detector to mistake a harmonic for the pitch, which is the cause of a note jumping an octave. It also keeps ScalaTuner from reacting to rumble or hiss.
+
+The detector cannot hear below about 47 Hz, whatever the setting, and Highest Pitch should stay well under a quarter of the sample rate. Pitches outside the range are not corrected: the sound passes through as it is, and the meters show a dash.
+
+Raise the Threshold if background noise or the tail of a note makes ScalaTuner jump about. Lower it for a very quiet recording, so that soft notes are followed too.
+
+The Settings page also shows which folder the scales are read from and how many files it holds. To change the folder, see Getting the scales.
+
+All three settings can be automated by the host, like the sliders on the Main page.
+
+## What happens to the sound
+
+The pitch detector and the sound you hear are separate. The detector works on a copy of the input in which the spectrum rolls off above about 8 kHz, so that hiss and high harmonics do not confuse it. None of this reaches the output.
+
+The output is your input, played back faster or slower to move the pitch, with short cross-fades where it jumps from one stretch of the input to another. There is no filter or equaliser in that path. At 44.1 and 48 kHz the input is first resampled to double the rate inside the plug-in; that filter cuts only close to the top of the band. At 88.2 kHz and higher the input is used directly.
+
 ## Scale Root and A Reference
 
 These are two different things. A Reference says how high A is: 440 Hz in most cases. Scale Root says on which note the scale starts.
@@ -95,11 +121,11 @@ ScalaTuner needs a little time to hear the pitch. The sound comes out 1024 sampl
 ## Good to know
 
 - ScalaTuner follows one pitch in each channel. Chords and several voices in one channel are not tuned note by note; the strongest pitch is followed.
-- It hears pitches between 75 and 1200 Hz. A very quiet sound, below about -50 dB, is taken for silence, and noise without a clear pitch is left alone.
+- It hears pitches between 75 and 1200 Hz, and a sound below -50 dB is taken for silence. Both can be changed on the Settings page. Noise without a clear pitch is left alone.
 - On a scale with few notes, such as 5 or 7 per octave, the jumps between notes are large. The meter bar can stay at its end while a note is far from the next one. That is not a fault.
 - The sound is changed by playing it faster or slower between cuts, as in a tape machine, with short cross-fades. Very large corrections, and unvoiced sounds like consonants, are the places where this can be heard.
 - The scale list is read when the plug-in is loaded, and the scale is read from its file when it is chosen. A very large file with more than 1000 notes is not accepted; the plug-in uses 12-TET and shows a warning in red next to the scale name.
-- All sliders and the Mode can be automated by the host. The Scale can be automated as well; its value is its place in the list.
+- All sliders, the Mode and the Settings can be automated by the host. The Scale can be automated as well; its value is its place in the list.
 
 ## Credits
 

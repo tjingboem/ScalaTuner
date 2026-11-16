@@ -70,6 +70,7 @@ Retuner::Retuner (int fsamp) :
     }
 
     // Accepted correlation peak range, corresponding to 75..1200 Hz.
+    _thresh = 1e-5f;  // -50 dB
     _ifmin = _fsamp / 1200;
     _ifmax = _fsamp / 75;
 
@@ -399,7 +400,7 @@ float Retuner::findcycle (void)
     // we can compare to spectrum values in Fdata.
     m /= 3.0f; 
 
-    if (m < 1e-5f)
+    if (m < _thresh)
     {
 	// Signal level below -50 dB, assume unvoiced.
 	return 0;

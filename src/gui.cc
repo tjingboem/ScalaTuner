@@ -17,16 +17,20 @@ static const int LX = 12, LY = 46, LW = 290, LH = 386;      // scale browser
 static const int ROW_H = 22, SEARCH_H = 26;
 static const int RX = 318, RW = 430;                         // right column
 
-struct Slider { int param; int y; bool log; };
+struct Slider { int param; int y; bool log; int page; };
 static const Slider sliders [] = {
-    { P_ROOT,   236, false },
-    { P_TUNE,   266, false },
-    { P_BIAS,   296, false },
-    { P_SMOOTH, 326, true  },
-    { P_CORR,   356, false },
-    { P_OFFS,   386, false },
+    { P_ROOT,   236, false, 0 },
+    { P_TUNE,   266, false, 0 },
+    { P_BIAS,   296, false, 0 },
+    { P_SMOOTH, 326, true,  0 },
+    { P_CORR,   356, false, 0 },
+    { P_OFFS,   386, false, 0 },
+    { P_MINHZ,  100, true,  1 },
+    { P_MAXHZ,  140, true,  1 },
+    { P_THRESH, 180, false, 1 },
 };
-static const int NSL = 6;
+static const int NSL = 9;
+static const int TAB_X = RX + RW - 176, TAB_Y = 10, TAB_W = 84, TAB_H = 26;
 static const int SL_X = RX + 110, SL_W = RW - 110 - 120, SL_H = 10;
 
 struct Gui
@@ -52,6 +56,7 @@ struct Gui
     int  last_click_slider;
     long last_click_ms;
     bool dirty_list;
+    int  page;                   // 0 main, 1 settings
 
     // cached current scale for drawing
     Scl     scl;
@@ -219,6 +224,41 @@ static void draw (Gui *g, cairo_t *cr)
         col (cr, 0x5a6578); rrect (cr, LX + LW - 9, ry0 + ty * sbh, 5, std::max (16.0, th * sbh), 2); cairo_fill (cr);
     }
 
+    // ---- page tabs
+    for (int t = 0; t < 2; t++)
+    {
+        int x = TAB_X + t * (TAB_W + 8);
+        col (cr, t == g->page ? 0x2a6fa8 : 0x2a2e37); rrect (cr, x, TAB_Y, TAB_W, TAB_H, 5); cairo_fill (cr);
+        text (cr, x + TAB_W / 2, TAB_Y + 18, t ? "Settings" : "Main", 13, t == g->page ? 0xffffff : 0xa8b0c0, 2);
+    }
+
+    if (g->page == 1)
+    {
+        col (cr, 0x1d2027); rrect (cr, RX, 52, RW, 160, 6); cairo_fill (cr);
+        text (cr, RX + 12, 74, "PITCH DETECTION", 11, 0x6c7380);
+        for (int i = 0; i < NSL; i++)
+        {
+            const Slider &s = sliders [i];
+            if (s.page != 1) continue;
+            double v = p->val [s.param];
+            text (cr, RX + 12, s.y + 9, param_info [s.param].name, 13, 0xc4cad6);
+            col (cr, 0x2a2e37); rrect (cr, SL_X, s.y, SL_W, SL_H, 4); cairo_fill (cr);
+            double n = slider_norm (s, v);
+            col (cr, g->drag == i ? 0x7fd6ff : 0x4aa8e0); rrect (cr, SL_X, s.y, std::max (6.0, n * SL_W), SL_H, 4); cairo_fill (cr);
+            text (cr, RX + RW - 12, s.y + 9, plugin_param_text (p, s.param, v).c_str (), 12, 0xe8ecf4, 1);
+        }
+        col (cr, 0x1d2027); rrect (cr, RX, 226, RW, 120, 6); cairo_fill (cr);
+        text (cr, RX + 12, 248, "SCALES", 11, 0x6c7380);
+        text (cr, RX + 12, 274, "Folder", 13, 0xc4cad6);
+        std::string d = p->dir;
+        if (d.size () > 44) d = "..." + d.substr (d.size () - 41);
+        text (cr, SL_X, 274, d.c_str (), 12, 0xe8ecf4);
+        text (cr, RX + 12, 302, "Files", 13, 0xc4cad6);
+        snprintf (b, sizeof (b), "%d", p->nscales);
+        text (cr, SL_X, 302, b, 12, 0xe8ecf4);
+        return;
+    }
+
     // ---- grid strip (one period)
     double period = g->scl.oct [g->scl.n - 1];
     int sy = 52, sh = 92;
@@ -284,6 +324,7 @@ static void draw (Gui *g, cairo_t *cr)
     for (int i = 0; i < NSL; i++)
     {
         const Slider &s = sliders [i];
+        if (s.page != 0) continue;
         double v = p->val [s.param];
         text (cr, RX + 12, s.y + 9, param_info [s.param].name, 13, 0xc4cad6);
         col (cr, 0x2a2e37); rrect (cr, SL_X, s.y, SL_W, SL_H, 4); cairo_fill (cr);
@@ -319,10 +360,10 @@ static void redraw (Gui *g)
 
 // ---------------------------------------------------------------- input
 
-static int slider_at (int x, int y)
+static int slider_at (Gui *g, int x, int y)
 {
     for (int i = 0; i < NSL; i++)
-        if (y >= sliders [i].y - 8 && y <= sliders [i].y + SL_H + 8 && x >= RX && x <= RX + RW) return i;
+        if (sliders [i].page == g->page && y >= sliders [i].y - 8 && y <= sliders [i].y + SL_H + 8 && x >= RX && x <= RX + RW) return i;
     return -1;
 }
 
@@ -359,7 +400,7 @@ static void on_button (Gui *g, XButtonEvent *e)
         }
         else
         {
-            int i = slider_at (x, y);
+            int i = slider_at (g, x, y);
             if (i >= 0)
             {
                 const Slider &s = sliders [i];
@@ -374,6 +415,13 @@ static void on_button (Gui *g, XButtonEvent *e)
         return;
     }
     if (e->button != 1) return;
+
+    if (y >= TAB_Y && y < TAB_Y + TAB_H)
+        for (int t = 0; t < 2; t++)
+        {
+            int tx = TAB_X + t * (TAB_W + 8);
+            if (x >= tx && x < tx + TAB_W) { g->page = t; g->drag = -1; return; }
+        }
 
     if (in_list)
     {
@@ -397,7 +445,7 @@ static void on_button (Gui *g, XButtonEvent *e)
         return;
     }
 
-    int i = slider_at (x, y);
+    int i = slider_at (g, x, y);
     if (i >= 0)
     {
         long t = now_ms ();
@@ -419,7 +467,7 @@ static void on_button (Gui *g, XButtonEvent *e)
     }
     // mode buttons
     int by = 410, bw = 86;
-    if (y >= by && y < by + 24)
+    if (g->page == 0 && y >= by && y < by + 24)
         for (int m = 0; m < 3; m++)
         {
             int bx = SL_X + m * (bw + 6);
@@ -514,6 +562,7 @@ static bool gui_create (const clap_plugin_t *pl, const char *api, bool floating)
     g->search_focus = false;
     g->dragging_scroll = false;
     g->drag = -1;
+    g->page = 0;
     g->last_click_slider = -1;
     g->last_click_ms = 0;
     g->scl.twelve_tet ();

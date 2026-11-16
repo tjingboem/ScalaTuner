@@ -18,6 +18,9 @@ const ParamInfo param_info [P_COUNT] = {
     { "Correction", 0,    1,    1,   false },
     { "Offset",     -2,   2,    0,   false },
     { "Mode",       0,    2,    0,   true  },
+    { "Lowest Pitch",  50,   500,  75,    false },
+    { "Highest Pitch", 200,  4000, 1200,  false },
+    { "Threshold",     -90,  -20,  -50,   false },
 };
 
 static const char *mode_names [3] = { "Auto", "MIDI", "Manual" };
@@ -146,6 +149,9 @@ std::string plugin_param_text (Plugin *p, uint32_t id, double v)
     case P_SMOOTH: snprintf (b, sizeof (b), "%.3f", v); return b;
     case P_CORR:   snprintf (b, sizeof (b), "%d %%", (int)lrint (v * 100)); return b;
     case P_OFFS:   snprintf (b, sizeof (b), "%+.2f st", v); return b;
+    case P_MINHZ:
+    case P_MAXHZ:  snprintf (b, sizeof (b), "%.0f Hz", v); return b;
+    case P_THRESH: snprintf (b, sizeof (b), "%.0f dB", v); return b;
     case P_MODE:
     {
         int i = (int)lrint (v);
@@ -474,6 +480,8 @@ static clap_process_status plug_process (const clap_plugin_t *pl, const clap_pro
         r->set_corrfilt ((float)p->val [P_SMOOTH]);
         r->set_corrgain ((float)p->val [P_CORR]);
         r->set_corroffs ((float)p->val [P_OFFS]);
+        r->set_range ((float)p->val [P_MINHZ], (float)p->val [P_MAXHZ]);
+        r->set_threshold ((float)p->val [P_THRESH]);
         r->set_table (p->tab, act);
     }
 

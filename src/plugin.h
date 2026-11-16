@@ -12,7 +12,8 @@
 #include "scl.h"
 
 enum {
-    P_SCALE, P_ROOT, P_TUNE, P_BIAS, P_SMOOTH, P_CORR, P_OFFS, P_MODE, P_COUNT
+    P_SCALE, P_ROOT, P_TUNE, P_BIAS, P_SMOOTH, P_CORR, P_OFFS, P_MODE,
+    P_MINHZ, P_MAXHZ, P_THRESH, P_COUNT
 };
 
 struct ParamInfo

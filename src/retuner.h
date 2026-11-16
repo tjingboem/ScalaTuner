@@ -22,6 +22,7 @@
 #define __RETUNER_H
 
 
+#include <math.h>
 #include <fftw3.h>
 #include "resampler.h"
 
@@ -60,6 +61,24 @@ public:
     void set_corroffs (float v)
     {
         _corroffs = v;
+    }
+
+    // Pitch detection range in Hz, and the level (dB, full-scale sine = 0)
+    // below which the input is taken as silence.
+    void set_range (float fmin, float fmax)
+    {
+        int lo = (int)(_fsamp / fmax);
+        int hi = (int)(_fsamp / fmin);
+        if (lo < 4) lo = 4;                      // find-peak window needs >= 1 sample
+        if (hi > _fftlen / 2 - 4) hi = _fftlen / 2 - 4;  // lags beyond half the window are not valid
+        if (hi < lo * 2) hi = lo * 2;
+        _ifmin = lo;
+        _ifmax = hi;
+    }
+
+    void set_threshold (float db)
+    {
+        _thresh = powf (10.0f, db / 10.0f);
     }
 
     void set_notemask (int k)
@@ -112,6 +131,7 @@ private:
     int              _fsamp;
     int              _ifmin;
     int              _ifmax;
+    float            _thresh;
     bool             _upsamp;
     int              _fftlen;
     int              _ipsize;
