@@ -48,7 +48,6 @@ struct Plugin
     // Scale list: names [i] is scale index i + 1; index 0 is 12-TET.
     std::vector<std::string> env_dirs;   // from SCALATUNER_SCALES (not editable here)
     std::vector<std::string> cfg_dirs;   // from ~/.config/scalatuner/scales_dir (editable in the GUI)
-    std::string              def_dir;    // built-in fallback folder, if it exists
     std::vector<std::string> dirs;       // all folders in use
     std::vector<int>         dir_counts; // number of .scl files in each of dirs
     std::vector<std::string> names;      // scale names

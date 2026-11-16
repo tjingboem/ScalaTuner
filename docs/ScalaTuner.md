@@ -15,8 +15,9 @@ The pitch tracking and the resynthesis are the zita-at1 autotuner by Fons Adriae
 ScalaTuner reads the scale files while it runs. It can use several folders at once, and shows the scales of all of them in one list. The folders come from three places:
 
 - the environment variable SCALATUNER_SCALES, if it is set; several folders are separated by a colon;
-- the folders that you add on the Settings page; they are kept in the file ~/.config/scalatuner/scales_dir, one folder per line;
-- a standard folder: the first of ~/scl, ~/scales and ~/.scala/scl that exists.
+- the folders on the Settings page; they are kept in the file ~/.config/scalatuner/scales_dir, one folder per line.
+
+The first time ScalaTuner runs, it puts the first of ~/scl, ~/scales and ~/.scala/scl that exists in that list, so you start with your scale archive in place. It is an ordinary entry: you can remove it like any other folder.
 
 The Scala scale archive, about 5000 files, works well in ~/scl. To use your own scales as well, put them in a folder of your own and add that folder as described under Settings. Scales in all folders are sorted together by name.
 
@@ -81,8 +82,8 @@ Raise the Threshold if background noise or the tail of a note makes ScalaTuner j
 The Settings page also holds the scale folders. Under SCALE FOLDERS it lists every folder in use, and how many scale files they hold together.
 
 - To add a folder, click the field at the bottom, type the path (a path starting with ~/ is fine) or paste it with Ctrl+V, and press Return. If the folder exists, its scales appear in the list at once, and the scale you were using stays selected. If it does not, the field shows a short message in red. Some hosts keep the keyboard for themselves; if typing does nothing, click the field again.
-- To remove a folder that you added, click the x at the right of its line. The files are not touched.
-- Folders from the environment variable and the standard folder have no x. They are not part of the file in ~/.config.
+- To remove a folder, click the x at the right of its line. The files are not touched. A folder that you removed does not come back by itself.
+- Folders from the environment variable have no x, because they are not part of the file in ~/.config. They go away when you unset the variable.
 
 The folders are the same for every ScalaTuner in the project and in other projects. The scale a project uses is saved by name; if the file is no longer there when the project is opened, ScalaTuner uses 12-TET.
 

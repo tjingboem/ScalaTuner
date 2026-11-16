@@ -184,13 +184,13 @@ static void draw (Gui *g, cairo_t *cr)
 
     // Header
     char b [256];
-    text (cr, 14, 28, "ScalaTuner", 20, 0xe8ecf4);
+    text (cr, 14, 29, "ScalaTuner", 22, 0xe8ecf4);
     int cur = (int)lrint (p->val [P_SCALE]);
     {
         double period = g->scl.oct [g->scl.n - 1];
         snprintf (b, sizeof (b), "%s   %d notes, period %.2f cents%s", scale_name (p, cur).c_str (), g->scl.n,
                   period * 1200.0, g->scl_ok ? "" : "   (file unreadable, using 12-TET)");
-        text (cr, 140, 28, b, 13, g->scl_ok ? 0x9fd8ff : 0xff8a7a);
+        text (cr, 352, 28, b, 13, g->scl_ok ? 0x9fd8ff : 0xff8a7a, 2);   // centred between title and tabs
     }
 
     // ---- scale browser

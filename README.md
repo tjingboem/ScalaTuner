@@ -29,8 +29,9 @@ See [`docs/ScalaTuner.odt`](docs/ScalaTuner.odt) (source text: `docs/ScalaTuner.
 ## Where the scales come from
 Several folders can be used at once; all their scales appear in one list:
 1. folders in the `SCALATUNER_SCALES` environment variable (separated by `:`)
-2. folders you add on the plug-in's Settings page, stored one per line in `~/.config/scalatuner/scales_dir`
-3. the first of `~/scl`, `~/scales`, `~/.scala/scl` that exists
+2. folders on the plug-in's Settings page (add and remove them there), stored one per line in `~/.config/scalatuner/scales_dir`
+
+On first run the first of `~/scl`, `~/scales`, `~/.scala/scl` that exists is added to the list (an ordinary, removable entry).
 
 A good source is the Scala scale archive (about 5000 `.scl` files).
 

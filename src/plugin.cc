@@ -62,6 +62,8 @@ static std::string clean_path (std::string s)
     return s;
 }
 
+static void save_dir_settings (Plugin *p);
+
 static void load_dir_settings (Plugin *p)
 {
     p->env_dirs.clear ();
@@ -80,20 +82,34 @@ static void load_dir_settings (Plugin *p)
             pos = c + 1;
         }
     }
+    bool seeded = false;
     if (FILE *f = fopen (config_file ().c_str (), "r"))
     {
         char line [2048];
         while (fgets (line, sizeof (line), f))
         {
             std::string d = clean_path (line);
+            if (d == "# seeded") seeded = true;
             if (!d.empty () && d [0] != '#') p->cfg_dirs.push_back (d);
         }
         fclose (f);
     }
-    p->def_dir.clear ();
-    const char *cand [] = { "/scl", "/scales", "/.scala/scl" };
-    for (const char *c : cand)
-        if (is_dir (home_dir () + c)) { p->def_dir = home_dir () + c; break; }
+    // First run with this version: the standard folder becomes an ordinary entry
+    // in the list, so it can be removed like any other.
+    if (!seeded)
+    {
+        const char *cand [] = { "/scl", "/scales", "/.scala/scl" };
+        for (const char *c : cand)
+        {
+            std::string d = home_dir () + c;
+            if (is_dir (d))
+            {
+                if (std::find (p->cfg_dirs.begin (), p->cfg_dirs.end (), d) == p->cfg_dirs.end ()) p->cfg_dirs.push_back (d);
+                break;
+            }
+        }
+        save_dir_settings (p);
+    }
 }
 
 static void save_dir_settings (Plugin *p)
@@ -103,6 +119,7 @@ static void save_dir_settings (Plugin *p)
     mkdir (dir.c_str (), 0755);
     if (FILE *f = fopen (config_file ().c_str (), "w"))
     {
+        fprintf (f, "# seeded\n");
         for (auto &d : p->cfg_dirs) fprintf (f, "%s\n", d.c_str ());
         fclose (f);
     }
@@ -116,15 +133,13 @@ static std::string lower (std::string s)
 
 static void scan_scales (Plugin *p)
 {
-    // Folders in use: environment, then the config file, then the default folder.
+    // Folders in use: environment, then the config file.
     std::vector<std::string> dirs;
     auto add = [&] (const std::string &d) {
         if (!d.empty () && std::find (dirs.begin (), dirs.end (), d) == dirs.end ()) dirs.push_back (d);
     };
     for (auto &d : p->env_dirs) add (d);
     for (auto &d : p->cfg_dirs) add (d);
-    add (p->def_dir);
-    if (dirs.empty ()) add (home_dir () + "/scl");
 
     struct E { std::string name, path; };
     std::vector<E> all;
