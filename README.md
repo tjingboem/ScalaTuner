@@ -33,7 +33,7 @@ Several folders can be used at once; all their scales appear in one list:
 
 On first run the first of `~/scl`, `~/scales`, `~/.scala/scl` that exists is added to the list (an ordinary, removable entry).
 
-A good source is the Scala scale archive (about 5000 `.scl` files).
+A good source is the Scala scale archive (more than 5200 `.scl` files): [scales.zip](https://www.huygens-fokker.org/docs/scales.zip), with a [contents listing](https://www.huygens-fokker.org/docs/scalesdir.txt) that describes every scale. To search the archive on the web (by name, description, number of tones), use the [ScalaVista Online Scale Archive](https://scalavista.zentralzone.com/scalearchive.php) by H-Pi Instruments. Download page: https://www.huygens-fokker.org/scala/downloads.html
 
 ## Build (Linux, X11)
 Needs a C++ compiler, `fftw3f`, `x11` and `cairo` development packages.

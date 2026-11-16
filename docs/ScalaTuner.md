@@ -19,7 +19,7 @@ ScalaTuner reads the scale files while it runs. It can use several folders at on
 
 The first time ScalaTuner runs, it puts the first of ~/scl, ~/scales and ~/.scala/scl that exists in that list, so you start with your scale archive in place. It is an ordinary entry: you can remove it like any other folder.
 
-The Scala scale archive, about 5000 files, works well in ~/scl. To use your own scales as well, put them in a folder of your own and add that folder as described under Settings. Scales in all folders are sorted together by name.
+The Scala scale archive, more than 5200 files, works well in ~/scl. You can download it from www.huygens-fokker.org/docs/scales.zip (the Download page of Scala is www.huygens-fokker.org/scala/downloads.html). To search the archive on the web, use the ScalaVista Online Scale Archive of H-Pi Instruments, scalavista.zentralzone.com/scalearchive.php. It finds scales by name, description, number of tones and more, and each entry links to its .scl file. Note the name of a scale there, then look for that name in the ScalaTuner list. The file www.huygens-fokker.org/docs/scalesdir.txt is a plain list of every scale with a short description, which you can also search in a browser or text editor. To use your own scales as well, put them in a folder of your own and add that folder as described under Settings. Scales in all folders are sorted together by name.
 
 If no folder is found, the list holds only 12-TET, the ordinary equal-tempered scale.
 
@@ -104,6 +104,24 @@ Every Scala scale begins with 1/1, the starting note, and gives all other notes 
 For a scale that starts on A, set Scale Root to A4: 1/1 is then 440 Hz. Moving the Scale Root moves the whole grid, and the scale keeps its shape. Moving A Reference changes the pitch of everything a little, for example to follow an orchestra that tunes to 432 Hz or 442 Hz.
 
 The Scale Root is a MIDI note number, so it also sets how MIDI notes find their place in the scale; see below.
+
+## Changing scales over time
+
+The scale can be changed while the music plays, by automation. This works in any host that automates plug-in parameters; as an example, REAPER:
+
+- Open the plug-in's FX window, click Param, choose Scale, and choose Show track envelope. A lane with the envelope opens under the track.
+- Draw points on the envelope. Each height is one scale. Use square points (the shape of a step) so that the scale changes at the point and does not slide through the scales in between.
+- The box that shows the value of a point gives the name of the scale, for example pyth_12, in hosts that show the text of a parameter. At the bottom of the range is 12-TET.
+
+A few things to know:
+
+- The value of the Scale parameter is the place of the scale in the list, counted from 12-TET at 0. The list is sorted by name and holds the scales of all folders together. A REAPER envelope keeps its values precisely enough to tell thousands of numbers apart, so every scale in even a long list can be set exactly: edit the value of the envelope point, or drag the point until it shows the scale you want. The same number always gives the same scale, as long as the folders do not change.
+- That makes the numbers usable as material in themselves: step through neighbouring scales, jump to a scale far away, or draw an envelope that visits scales in an order that you would not choose by ear. A folder of your own with only the scales for the piece gives small numbers that are easy to remember.
+- When you add or remove a folder, the places of the scales change, and an envelope that was drawn before then points at other scales. Settle the folders before you draw the envelope.
+- The scale changes within a fraction of a second after the point, not on the exact sample. The new scale is read from its file when it is called for.
+- The pitch that is being followed jumps to the nearest note of the new scale. A note that was held can move when the scale changes under it.
+- The Scale Root and the other sliders can be automated in the same way. A change of Scale Root with a steady scale moves the whole grid.
+- The scale you chose in the window is the starting value; automation takes over while the host plays the envelope.
 
 ## Mode and MIDI notes
 
