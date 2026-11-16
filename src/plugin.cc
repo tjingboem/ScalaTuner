@@ -35,6 +35,7 @@ const ParamInfo param_info [P_COUNT] = {
     { "Highest Pitch", 200,  4000, 1200,  false },
     { "Threshold",     -90,  -20,  -50,   false },
     { "Lookahead",     0,    4,    0,     true  },
+    { "Hold",          0,    3,    0,     true  },
 };
 
 static const char *mode_names [3] = { "Auto", "MIDI", "Manual" };
@@ -302,6 +303,12 @@ std::string plugin_param_text (Plugin *p, uint32_t id, double v)
         if (st > 4) st = 4;
         snprintf (b, sizeof (b), st ? "%.0f ms" : "Off  %.0f ms", (base << st) * 1000.0 / p->sr);
         return b;
+    }
+    case P_HOLD:
+    {
+        static const char *hn [4] = { "Off", "0.5 s", "2 s", "Forever" };
+        int i = (int)lrint (v);
+        return hn [i < 0 ? 0 : i > 3 ? 3 : i];
     }
     case P_MODE:
     {
@@ -674,6 +681,11 @@ static clap_process_status plug_process (const clap_plugin_t *pl, const clap_pro
         r->set_corroffs ((float)p->val [P_OFFS]);
         r->set_range ((float)p->val [P_MINHZ], (float)p->val [P_MAXHZ]);
         r->set_threshold ((float)p->val [P_THRESH]);
+        {
+            static const float hold_s [4] = { 0.f, 0.5f, 2.f, -1.f };
+            int hi = (int)lrint (p->val [P_HOLD]);
+            r->set_hold (hold_s [hi < 0 ? 0 : hi > 3 ? 3 : hi]);
+        }
         r->set_active (p->act);
         r->set_maxdist (p->maxdist);
     }

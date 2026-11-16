@@ -73,6 +73,7 @@ The Settings tab holds the settings for the pitch detection. They are for fittin
 | Highest Pitch | 200 to 4000 Hz | 1200 Hz | Pitches above this are not followed. |
 | Threshold | -90 to -20 dB | -50 dB | Sound below this level is taken for silence. 0 dB is a full-scale sine wave. |
 | Lookahead | Off, 43, 85, 170, 340 ms | Off | Extra delay, so that the pitch is known before a note is heard. See Delay and Lookahead, below. |
+| Hold | Off, 0.5 s, 2 s, Forever | Off | How long the correction stays when the pitch is lost. See Hold, below. |
 
 Set the range around the sound that you play in. A bass line can have the range 40 to 300 Hz, and a high flute 250 to 3000 Hz. A narrower range makes it harder for the detector to mistake a harmonic for the pitch, which is the cause of a note jumping an octave. It also keeps ScalaTuner from reacting to rumble or hiss.
 
@@ -88,7 +89,18 @@ The Settings page also holds the scale folders. Under SCALE FOLDERS it lists eve
 
 The folders are the same for every ScalaTuner in the project and in other projects. The scale a project uses is saved by name; if the file is no longer there when the project is opened, ScalaTuner uses 12-TET.
 
-All four settings can be automated by the host, like the sliders on the Main page.
+All five settings can be automated by the host, like the sliders on the Main page.
+
+## Hold
+
+When ScalaTuner can no longer hear a pitch, because the sound has fallen below the Threshold or has turned into noise, it normally lets go after about 50 milliseconds. The correction drops to zero and the sound snaps back to its original pitch. For a singer between two phrases that is right. For a ringing sound that slowly dies away it is not: the end of the sound jumps back off the grid.
+
+Hold keeps the last correction for the time that you choose, 0.5 seconds, 2 seconds, or for ever. The tail of the sound then stays on the grid until it is gone. With Hold off, nothing changes from before.
+
+- While Hold is in force, the sound is shifted by the last correction, even if it no longer has a pitch that the detector can follow. That is what makes a tail follow the grid.
+- When a new pitch is heard, it is corrected at once, as always.
+- If a new sound starts while the plug-in is still holding, the first 20 to 40 milliseconds of the new sound are shifted by the old correction, until the new pitch is found. With Lookahead, that part is corrected in time, as described above.
+- For voices and other sounds with pauses, keep Hold off.
 
 ## What happens to the sound
 

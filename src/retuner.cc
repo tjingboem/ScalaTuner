@@ -130,6 +130,8 @@ Retuner::Retuner (int fsamp) :
     _notebits = 0;
     _lastnote = -1;
     _count = 0;
+    _hold = 0;
+    _unv = 0;
     _cycle = _frsize;
     _error = 0.0f;
     _ratio = 1.0f;
@@ -260,18 +262,24 @@ int Retuner::process (int nfram, float *inp, float *out)
                     // If the pitch estimate succeeds, find the
                     // nearest note and required resampling ratio.
                     _count = 0;
+                    _unv = 0;
                     _cycle = v;
                     finderror ();
                 }
-                else if (++_count > 5)
+                else if (++_unv, ++_count > 5)
                 {
                     // If the pitch estimate fails, the current
                     // ratio is kept for 5 fragments. After that
                     // the signal is considered unvoiced and the
                     // pitch error is reset.
                     _count = 5;
-                    _cycle = _frsize;
-                    _error = 0;
+                    // Hold: keep the last correction (and the period for the jumps)
+                    // for the hold time; after that, or without Hold, let go.
+                    if (_hold == 0 || (_hold > 0 && _unv > _hold))
+                    {
+                        _cycle = _frsize;
+                        _error = 0;
+                    }
                 }
                 else if (_count == 2)
                 {

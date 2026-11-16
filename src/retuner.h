@@ -83,6 +83,20 @@ public:
         _thresh = powf (10.0f, db / 10.0f);
     }
 
+    // Hold: how long the correction stays after the pitch is lost, instead of
+    // returning to the original pitch. seconds: 0 = off, < 0 = without limit.
+    void set_hold (float seconds)
+    {
+        if (seconds < 0) _hold = -1;
+        else if (seconds == 0) _hold = 0;
+        else
+        {
+            int per = 4 * _frsize / (_upsamp ? 2 : 1);   // input frames between pitch estimates
+            _hold = (int)(seconds * _fsamp / per + 0.5f);
+            if (_hold < 1) _hold = 1;
+        }
+    }
+
     void set_notemask (int k)
     {
         _notemask = k;
@@ -188,6 +202,8 @@ private:
     int              _notebits;
     int              _lastnote;
     int              _count;
+    int              _hold;     // estimates to hold the correction, -1 = unlimited, 0 = off
+    int              _unv;      // unvoiced estimates in a row
     float            _cycle;
     float            _error;
     float            _ratio;
