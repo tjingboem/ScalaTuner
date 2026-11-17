@@ -8,11 +8,21 @@ ScalaTuner is not only for voices. It started from an autotuner, and a voice, a 
 
 How much structure a sound gets depends on how clear its pitch is. For a sound with a clear pitch the detector can be left at Clear, and the result is a precise tuning. For a sound with a weaker or unsteady pitch, move the Detector slider towards Loose; the sound then follows the grid for far more of its length, in steps. A scale with few notes per octave gives large steps and a strong effect; a scale with many notes gives small steps. See Clear and Loose, below.
 
-It follows one pitch at a time in each channel: it finds the pitch, looks for the nearest note of the scale, and moves the sound there. With a sliding sound, every slide is cut into steps, from one scale note to the next.
+It follows one pitch at a time in each channel: it finds the pitch, looks for the nearest scale note, and moves the sound there. With a sliding sound, every slide is cut into steps, from one scale note to the next.
 
 The plug-in is stereo. The left and the right channel each follow their own pitch, so two different sounds can sit in the two channels. It is built for CLAP on Linux.
 
 The pitch tracking and the resynthesis are the zita-at1 autotuner by Fons Adriaensen. ScalaTuner adds the Scala scales, the stereo setup and the window.
+
+## Words used in this manual
+
+Two kinds of notes meet in ScalaTuner, and they are not the same thing. This manual keeps them apart.
+
+- **Scale note.** One of the notes of the scale that you chose: a thin blue line in the grid strip. A scale note is counted in steps from the first scale note, 1/1, which is step 0.
+- **Target note.** The scale note that the sound is being pulled to at this moment. Its name is shown in the meter.
+- **Allowed notes.** The scale notes that may become the target. In Auto and Manual mode every scale note is allowed, unless MIDI notes narrow the choice. See Mode and MIDI notes.
+- **MIDI note.** A note that you send to the plug-in, a key of the keyboard or a note drawn in the MIDI editor. A MIDI note is not a scale note. It stands for one, and tells ScalaTuner that this scale note is allowed. A MIDI note is only used for that.
+- **Pitch.** The frequency that ScalaTuner hears in the sound itself. When the manual speaks of a note of the sound, as in "the start of a note", it means a note in the music that you put in.
 
 ## Getting the scales
 
@@ -43,15 +53,15 @@ The scale is saved with the project by its name, not by its place in the list. S
 
 ## The grid strip
 
-The strip shows one period of the scale, starting at the Scale Root. Each thin blue line is a note of the scale. The first line, on the far left, is the first note (1/1); the white line on the far right is the same note, one period higher. A scale with 24 notes or fewer has the number of each note under its line.
+The strip shows one period of the scale, starting at the Scale Root. Each thin blue line is a scale note. The first line, on the far left, is the first scale note (1/1); the white line on the far right is the same scale note, one period higher. A scale with 24 notes or fewer has the step number of each scale note under its line.
 
 The sound you play in is shown on the strip while ScalaTuner hears a pitch: a blue marker for the left channel, an orange marker for the right. The marker shows where the pitch sits inside the period, whatever the octave. A marker standing on a line is in tune; between two lines is where it will be pulled from.
 
 ## The meters
 
-Each channel has a meter. It shows the name of the note that the pitch is being pulled to, for example C#4, and how far off the sound is in cents. The bar runs from -100 cents on the left to +100 cents on the right. A bar to the right means the sound is above the note and is being pulled down.
+Each channel has a meter. It shows the name of the target note, the scale note that the sound is being pulled to, for example C#4. The name is that of the MIDI note that plays this scale note (see Mode and MIDI notes). On a scale that is not 12-TET it is only a label for the step, and the grid strip shows where the scale note really is. The meter also shows how far off the sound is, in cents. The bar runs from -100 cents on the left to +100 cents on the right. A bar to the right means the sound is above the target note and is being pulled down.
 
-When ScalaTuner hears no pitch, the note name shows a dash and the bar is empty. The sound then passes through without correction.
+When ScalaTuner hears no pitch, the name of the target note shows a dash and the bar is empty. The sound then passes through without correction.
 
 ## The controls
 
@@ -59,13 +69,13 @@ Click or drag a slider to set it. Hold Shift while you drag for fine adjustment:
 
 | Control | Range | Default | What it does |
 |---|---|---|---|
-| Scale Root | C-1 to G9 | C4 | The note that carries the first note (1/1) of the scale. The Hz value next to it is how high that note sounds. See below. |
-| A Reference | 400 to 480 Hz | 440 Hz | The pitch of A4. Every note follows from it. |
-| Bias | 0 to 1 | 0.5 | How much the current note is preferred. At 0 the sound jumps to the nearest note as soon as it is nearer. Higher, and it may drift further off before it jumps. |
-| Smoothing | 0.02 to 0.5 | 0.1 | How slowly the correction moves while the note stays the same. Low is fast and hard; high is slow and keeps more of the natural movement. A new note always jumps at once. |
-| Correction | 0 to 100 % | 100 % | How much of the error is corrected. At 100 % the pitch lands on the note. At 50 % it goes half way. |
+| Scale Root | C-1 to G9 | C4 | The MIDI note that plays the first scale note (1/1). The Hz value next to it is how high that scale note sounds. See below. |
+| A Reference | 400 to 480 Hz | 440 Hz | The pitch of A4. The pitch of every scale note follows from it. |
+| Bias | 0 to 1 | 0.5 | How much the current target note is preferred. At 0 the sound jumps to the nearest scale note as soon as that note is nearer. Higher, and it may drift further off before it jumps. |
+| Smoothing | 0.02 to 0.5 | 0.1 | How slowly the correction moves while the sound stays on the same target note. Low is fast and hard; high is slow and keeps more of the natural movement. A new target note always jumps at once. |
+| Correction | 0 to 100 % | 100 % | How much of the error is corrected. At 100 % the pitch lands on the scale note. At 50 % it goes half way. |
 | Offset | -2 to +2 semitones | 0 | Moves the result up or down. With Correction at 0 %, it is a plain pitch shift. |
-| Mode | Auto, MIDI, Manual | Auto | Where the target notes come from. See below. |
+| Mode | Auto, MIDI, Manual | Auto | Which scale notes are allowed as targets: all of them, or only those that held MIDI notes stand for. See Mode and MIDI notes, below. |
 
 ## Settings
 
@@ -78,7 +88,7 @@ The Settings tab holds the settings for the pitch detection. They are for fittin
 | Threshold | -90 to -20 dB | -50 dB | Sound below this level is taken for silence. 0 dB is a full-scale sine wave. |
 | Detector | Clear to Loose | Clear | How clear a pitch the sound needs before it is followed. See Clear and Loose, below. |
 | Lookahead | Off, 43, 85, 170, 340 ms | Off | Extra delay, so that the pitch is known before a note is heard. See Delay and Lookahead, below. |
-| Lock | Off, On | Off | Keep the correction steady while the target note stays the same. See Lock, below. |
+| Lock | Off, On | Off | Keep the correction steady while the sound stays on the same target note (a scale note). See Lock, below. |
 | Hold | Off, 0.5 s, 2 s, Forever | Off | How long the correction stays when the pitch is lost. See Hold, below. |
 
 Set the range around the sound that you play in. A bass line can have the range 40 to 300 Hz, and a high flute 250 to 3000 Hz. A narrower range makes it harder for the detector to mistake a harmonic for the pitch, which is the cause of a note jumping an octave. It also keeps ScalaTuner from reacting to rumble or hiss.
@@ -134,12 +144,12 @@ Loose is meant for sound material of any kind, not for correcting a singer. Pitc
 
 With a sound that holds several pitches at once, the detector hops from one voice to another, because it follows the strongest pitch at each moment. Each hop gives a different amount of correction, and the Smoothing filter turns the changes into slides. All the voices of the sound are moved by the same correction, so they seem to glide between each other. This is an internal glide, and it comes from imposing a grid on a sound that has more than one pitch.
 
-Lock switches that off. While the target note stays the same, the correction is kept at the value that was found when the note was chosen, and it no longer follows every small change of the detected pitch. The whole sound is then moved by a steady amount for as long as the note lasts, and it only jumps when the target note changes. A change of the target note is heard as a step, not as a slide.
+Lock switches that off. While the sound stays on the same target note, the correction is kept at the value that was found when that scale note was chosen, and it no longer follows every small change of the detected pitch. The whole sound is then moved by a steady amount for as long as it stays on that scale note, and it only jumps when the target note changes, that is, when the sound is pulled to another scale note. A change of the target note is heard as a step, not as a slide.
 
 - Use Lock on dense or polyphonic sounds, and on sounds with an unsteady pitch, when the glides between the steps are not wanted.
-- With Lock on, a sound whose own pitch moves slowly keeps its own movement on top of the steady correction. The correction no longer corrects it back onto the note between two steps.
-- Lock does not change which note is chosen, only how the correction behaves while the note stays the same. Smoothing has no effect while Lock is on, except at the start of a note.
-- In a test with a noisy gliding sound, the movement of the correction within a note became about 40 % smaller with Clear, and about 55 % smaller with Loose.
+- With Lock on, a sound whose own pitch moves slowly keeps its own movement on top of the steady correction. The correction no longer corrects it back onto the target note between two steps.
+- Lock does not change which scale note is chosen as the target, only how the correction behaves while the target note stays the same. Smoothing has no effect while Lock is on, except at the start of a new target note.
+- In a test with a noisy gliding sound, the movement of the correction within one target note became about 40 % smaller with Clear, and about 55 % smaller with Loose.
 
 ## Hold
 
@@ -160,13 +170,13 @@ The output is your input, played back faster or slower to move the pitch, with s
 
 ## Scale Root and A Reference
 
-These are two different things. A Reference says how high A is: 440 Hz in most cases. Scale Root says on which note the scale starts.
+These are two different things. A Reference says how high A is: 440 Hz in most cases. Scale Root says which MIDI note plays the first scale note of the scale.
 
-Every Scala scale begins with 1/1, the starting note, and gives all other notes as steps above it. The Scale Root decides which note that is. With Scale Root on C4 and A Reference at 440 Hz, 1/1 sounds at 261.6 Hz, and the other notes are placed above it by the ratios or cents in the file. The Hz value next to the Scale Root slider always shows this.
+Every Scala scale begins with 1/1, the first scale note, and gives all other scale notes as steps above it. The Scale Root decides which pitch that is: the 12-TET pitch of the MIDI note that you choose. With Scale Root on C4 and A Reference at 440 Hz, 1/1 sounds at 261.6 Hz, and the other scale notes are placed above it by the ratios or cents in the file. The Hz value next to the Scale Root slider always shows this.
 
 For a scale that starts on A, set Scale Root to A4: 1/1 is then 440 Hz. Moving the Scale Root moves the whole grid, and the scale keeps its shape. Moving A Reference changes the pitch of everything a little, for example to follow an orchestra that tunes to 432 Hz or 442 Hz.
 
-The Scale Root is a MIDI note number, so it also sets how MIDI notes find their place in the scale; see below.
+The Scale Root is a MIDI note number, so it also decides which MIDI note is step 0 of the scale, and how the other MIDI notes find their place in it; see Mode and MIDI notes, below.
 
 ## Changing scales over time
 
@@ -182,29 +192,29 @@ A few things to know:
 - That makes the numbers usable as material in themselves: step through neighbouring scales, jump to a scale far away, or draw an envelope that visits scales in an order that you would not choose by ear. A folder of your own with only the scales for the piece gives small numbers that are easy to remember.
 - When you add or remove a folder, the places of the scales change, and an envelope that was drawn before then points at other scales. Settle the folders before you draw the envelope.
 - The scale changes within a fraction of a second after the point, not on the exact sample. The new scale is read from its file when it is called for.
-- The pitch that is being followed jumps to the nearest note of the new scale. A note that was held can move when the scale changes under it.
+- The sound jumps to the nearest scale note of the new scale. A sound that was held on a scale note can move when the scale changes under it.
 - The Scale Root and the other sliders can be automated in the same way. A change of Scale Root with a steady scale moves the whole grid.
 - The scale you chose in the window is the starting value; automation takes over while the host plays the envelope.
 
 ## Mode and MIDI notes
 
-ScalaTuner can take notes to say which notes of the scale are allowed. Notes arrive through the plug-in's note input. In REAPER, for example, send MIDI to the track.
+ScalaTuner can take MIDI notes to say which scale notes are allowed as targets. MIDI notes arrive through the plug-in's note input. In REAPER, for example, send MIDI to the track. A MIDI note is a key of the keyboard. It is not a scale note, but it stands for one, as described next.
 
-MIDI notes are placed on the scale one note per step, starting at the Scale Root. The Scale Root note is 1/1. The note above it is the second note of the scale, and so on. On a scale of 19 notes, 19 keys in a row cover one period, and the 20th key is 1/1 again, one period higher. Notes below the Scale Root count downward in the same way.
+**How a MIDI note stands for a scale note.** MIDI notes are placed on the scale one MIDI note per step, starting at the Scale Root. The MIDI note that is the Scale Root stands for the first scale note, 1/1, which is step 0. The MIDI note above it stands for the second scale note, step 1, and so on. On a scale of 19 notes, 19 MIDI notes in a row cover one period, and the 20th MIDI note stands for 1/1 again, one period higher. MIDI notes below the Scale Root count downward in the same way.
 
-A held key allows its note of the scale in every octave, not at one exact pitch. This is the pitch class of the key: its place within one period of the scale. In 12-TET, holding C# allows every C#, and a sound that is heard as C#2, C#3 or C#5 is pulled to the nearest C#. In a scale of 19 notes, the key that is step 5 allows step 5 in every period. Two keys that are one period apart allow the same note. The sound always moves the shortest way to the nearest allowed note, so the octave of the key that you play does not matter, and neither does the octave in which the detector hears the sound. This keeps the correction steady if the detector flips between a note and its octave, which happens with sounds that are rich in partials.
+**Every octave.** A held MIDI note allows its scale note in every octave, not at one exact pitch. This is the pitch class of the MIDI note: its place within one period of the scale. In 12-TET, holding a C# allows every C#, and a sound that is heard as C#2, C#3 or C#5 is pulled to the nearest C#. In a scale of 19 notes, the MIDI note that is step 5 allows scale step 5 in every period. Two MIDI notes that are one period apart allow the same scale note. The sound always moves the shortest way to the nearest allowed scale note, so the octave of the MIDI note that you play does not matter, and neither does the octave in which the detector hears the sound. This keeps the correction steady if the detector flips between a pitch and its octave, which happens with sounds that are rich in partials.
 
-You play, or draw in the MIDI editor, only the notes that you want to allow, in any octave. If the keys of the editor are not those of your scale, think in steps: the step of a key is its distance from the Scale Root, counted within one period.
+You play, or draw in the MIDI editor, only the MIDI notes for the scale notes that you want to allow, in any octave. If the keys of the editor are not those of your scale, think in steps: the step of a MIDI note is its distance from the Scale Root, counted within one period.
 
-- **Auto:** while notes are held, only those notes are allowed. With no note held, all notes of the scale are allowed. This is the usual setting: it works as a plain autotuner, and playing notes steers it.
-- **MIDI:** only held notes are allowed. With no note held, the sound is not corrected.
-- **Manual:** all notes of the scale are always allowed. MIDI notes are ignored.
+- **Auto:** while MIDI notes are held, only the scale notes that they stand for are allowed. With no MIDI note held, all scale notes are allowed. This is the usual setting: it works as a plain autotuner, and playing MIDI notes steers it.
+- **MIDI:** only the scale notes of held MIDI notes are allowed. With no MIDI note held, the sound is not corrected.
+- **Manual:** all scale notes are always allowed. MIDI notes are ignored.
 
 ## Stereo
 
-Each channel has its own pitch tracker, so the two channels do not have to hold the same note. Two voices, one on each side, are tuned each to its own nearest note.
+Each channel has its own pitch tracker, so the two channels do not have to be on the same scale note. Two voices, one on each side, are each pulled to their own nearest scale note.
 
-The settings are shared: both channels use the same scale, the same root and the same sliders. The result is that a mono sound that is sent to both channels is tuned twice in the same way. If the left and right channels carry a stereo recording of one single sound, they may land on different notes and the stereo image can shift. If that happens, tune the sound before it is made stereo.
+The settings are shared: both channels use the same scale, the same root and the same sliders. The result is that a mono sound that is sent to both channels is tuned twice in the same way. If the left and right channels carry a stereo recording of one single sound, they may land on different scale notes and the stereo image can shift. If that happens, tune the sound before it is made stereo.
 
 ## Delay and Lookahead
 
@@ -231,7 +241,7 @@ These five examples are very different from each other. Each one gives the sound
 
 **The settings.** Mode on Auto, Detector on Clear, Smoothing at its fastest (0.02). The rest at the defaults.
 
-**What happens.** Each note is pulled to the nearest note of the scale and kept there, and the drift and most of the vibrato disappear. In a test with a line that was up to 45 cents out of tune and moved by a vibrato of 25 cents, the average distance from the grid went from 29 cents to 8 cents. With Smoothing at its default of 0.1, part of the vibrato stays and the average distance is 16 cents. This is the classic use, and the one in which Clear is the right setting.
+**What happens.** Each note of the line is pulled to the nearest scale note and kept there, and the drift and most of the vibrato disappear. In a test with a line that was up to 45 cents out of tune and moved by a vibrato of 25 cents, the average distance from the grid went from 29 cents to 8 cents. With Smoothing at its default of 0.1, part of the vibrato stays and the average distance is 16 cents. This is the classic use, and the one in which Clear is the right setting.
 
 ### 2. Playing a sound like an instrument
 
@@ -239,9 +249,9 @@ These five examples are very different from each other. Each one gives the sound
 
 **The scale.** Slendro, five notes to the octave, at 231, 435, 702 and 933 cents above the root.
 
-**The settings.** Mode on MIDI, Scale Root on C4, Lookahead 340 ms, Hold on Forever, Threshold at -72 dB. Send the sound the MIDI notes C4, D4, C#4, E4, D#4 and C4 again, one after the other, each held for about a second and a half.
+**The settings.** Mode on MIDI, Scale Root on C4, Lookahead 340 ms, Hold on Forever, Threshold at -72 dB. Send the plug-in the MIDI notes C4, D4, C#4, E4, D#4 and C4 again, one after the other, each held for about a second and a half.
 
-**What happens.** The whole sound moves to the note that is played, in the intervals of the scale and not those of the keyboard. The keys are steps 0, 2, 1, 4, 3 and 0 of the scale. In a test the sound moved by 0, +431, +226, -273 and -502 cents, where the scale gives 0, +435, +231, -267 and -498 cents. Pitch class means that the octave of the key does not matter. Lookahead lets the start of each sound already be on the new note, and Hold lets the decay stay on the note until the sound has gone.
+**What happens.** The whole sound moves to the scale note that the MIDI note stands for, in the intervals of the scale and not those of the keyboard. The MIDI notes are steps 0, 2, 1, 4, 3 and 0 of the scale. In a test the sound moved by 0, +431, +226, -273 and -502 cents, where the scale gives 0, +435, +231, -267 and -498 cents. Pitch class means that the octave of the MIDI note does not matter. Lookahead lets the start of each sound already be on the new scale note, and Hold lets the decay stay on that scale note until the sound has gone.
 
 ### 3. A structure for a noisy sound that glides
 
@@ -261,7 +271,7 @@ These five examples are very different from each other. Each one gives the sound
 
 **The settings.** Mode on Auto, Detector on Clear, Smoothing at its fastest.
 
-**What happens.** The smooth sweep turns into a staircase on the steps of the Bohlen-Pierce scale. In the test the sweep went through 25 notes of the scale, and the time it spent within 10 cents of a note rose from 14 % to 62 %. The average distance from the nearest note fell from 36 cents to 14 cents. The steps are 146 cents wide and do not repeat at the octave: this is a grid that the keyboard and the usual autotuners do not have.
+**What happens.** The smooth sweep turns into a staircase on the steps of the Bohlen-Pierce scale. In the test the sweep went through 25 scale notes, and the time it spent within 10 cents of a note rose from 14 % to 62 %. The average distance from the nearest note fell from 36 cents to 14 cents. The steps are 146 cents wide and do not repeat at the octave: this is a grid that the keyboard and the usual autotuners do not have.
 
 ### 5. A grid that changes over time
 
@@ -271,14 +281,14 @@ These five examples are very different from each other. Each one gives the sound
 
 **The settings.** The same as in the fourth example.
 
-**What happens.** The same sound is strongly structured in one part and hardly touched in another. With Slendro, the average distance from the notes of the scale went from 59 cents to 11 cents. With Partch's 43 notes it went from 7 cents to 6 cents: the notes are so close that every pitch is already near one, so there is almost nothing to pull. With arist_enh3 the distance went from 90 cents to 56 cents. A scale with few notes pulls hard, a scale with many notes hardly at all, so changing the scale over time moves the sound between steps and slides.
+**What happens.** The same sound is strongly structured in one part and hardly touched in another. With Slendro, the average distance from the scale notes went from 59 cents to 11 cents. With Partch's 43 notes it went from 7 cents to 6 cents: the notes are so close that every pitch is already near one, so there is almost nothing to pull. With arist_enh3 the distance went from 90 cents to 56 cents. A scale with few notes pulls hard, a scale with many notes hardly at all, so changing the scale over time moves the sound between steps and slides.
 
 ## Good to know
 
 - ScalaTuner follows one pitch in each channel. Chords and several voices in one channel are not tuned note by note; the strongest pitch is followed. For sounds that are very dense, or have no pitch that the detector can find at all, the effect is limited; this is where Loose helps most.
 - It hears pitches between 75 and 1200 Hz, and a sound below -50 dB is taken for silence. Both can be changed on the Settings page. Noise without a clear pitch is left alone.
-- The scale is available over the whole range from about 27 Hz to 7 kHz, whatever the number of notes. How far a note can be pulled is limited to half a period of the scale, and at least one octave; a pitch further from every allowed note than that is left alone.
-- On a scale with few notes, such as 5 or 7 per octave, the jumps between notes are large. The meter bar can stay at its end while a note is far from the next one. That is not a fault.
+- The scale is available over the whole range from about 27 Hz to 7 kHz, whatever the number of notes. How far a sound can be pulled is limited to half a period of the scale, and at least one octave; a pitch further from every allowed scale note than that is left alone.
+- On a scale with few notes, such as 5 or 7 per octave, the jumps between scale notes are large. The meter bar can stay at its end while the sound is far from the next scale note. That is not a fault.
 - The sound is changed by playing it faster or slower between cuts, as in a tape machine, with short cross-fades. Very large corrections, and unvoiced sounds like consonants, are the places where this can be heard.
 - The scale list is read when the plug-in is loaded and whenever you add or remove a folder, and a scale is read from its file when it is chosen. A very large file with more than 1000 notes is not accepted; the plug-in uses 12-TET and shows a warning in red next to the scale name.
 - All sliders, the Mode and the Settings can be automated by the host. The Scale can be automated as well; its value is its place in the list.
