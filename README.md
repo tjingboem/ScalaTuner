@@ -26,6 +26,12 @@ the adjustable detector, Lookahead and Hold.
 ## Manual
 See [`docs/ScalaTuner.odt`](docs/ScalaTuner.odt) (source text: `docs/ScalaTuner.md`; rebuilt with `tools/make_manual.py`).
 
+## Examples
+`ScalaTuner_examples/` has audio for the five examples of the manual, with the settings in its `README.txt`:
+before and after files for the drifting line, the Bohlen-Pierce sweep and the scale changes, and in
+`synthetic/` a resonance with a MIDI file (play it from MIDI, example 2) and a noisy gliding sound
+(Clear against Loose with Lock, example 3). All of them are made from synthetic sounds.
+
 ## Where the scales come from
 Several folders can be used at once; all their scales appear in one list:
 1. folders in the `SCALATUNER_SCALES` environment variable (separated by `:`)
