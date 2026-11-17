@@ -15,9 +15,9 @@ Mono 16-bit, 48 kHz.  "before" = the untouched input, "after" = the output of Sc
 5  ex5_scale_changes      the same sweep; Scale automated: slendro5_1 (0 s), partch_43 (4 s),
                           arist_enh3 (8 s). Other settings as in 4.
 
-The files ex2_klank_melody_* and ex3_noisy_glide_* are made from private samples
-(accKlankM06.flac and ringModMidi3_stems.wav) and are not in the repository. The same two
-examples, made from synthetic sounds that anyone may share, are in synthetic/.
+The files ex2_klank_melody_* and ex3_noisy_glide_* are made from the author's own samples
+(accKlankM06.flac and the first 14 s of ringModMidi3_stems.wav). The same two examples, made
+from synthetic sounds, are in synthetic/.
 
 
 synthetic/  (made for the examples, from no one's recording: free to share)

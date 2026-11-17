@@ -30,7 +30,8 @@ See [`docs/ScalaTuner.odt`](docs/ScalaTuner.odt) (source text: `docs/ScalaTuner.
 `ScalaTuner_examples/` has audio for the five examples of the manual, with the settings in its `README.txt`:
 before and after files for the drifting line, the Bohlen-Pierce sweep and the scale changes, and in
 `synthetic/` a resonance with a MIDI file (play it from MIDI, example 2) and a noisy gliding sound
-(Clear against Loose with Lock, example 3). All of them are made from synthetic sounds.
+(Clear against Loose with Lock, example 3). Examples 2 and 3 also exist in versions made from the
+author's own samples (a struck resonance and a ring-modulated sound); the others use synthetic sounds.
 
 ## Where the scales come from
 Several folders can be used at once; all their scales appear in one list:
