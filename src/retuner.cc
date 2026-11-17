@@ -78,6 +78,9 @@ Retuner::Retuner (int fsamp) :
 
     // Accepted correlation peak range, corresponding to 75..1200 Hz.
     _thresh = 1e-5f;  // -50 dB
+    _vthr_v = 0.6f;
+    _a1min = 1e-4f;
+    _rmin = 1e-2f;
     _ifmin = _fsamp / 1200;
     _ifmax = _fsamp / 75;
 
@@ -437,7 +440,7 @@ float Retuner::findcycle (void)
 
     // Search for autocorrelation peaks.
     im = 0.0f; // Period.
-    ym = 0.3f; // Autocorrelation.
+    ym = 0.5f * _vthr_v; // Autocorrelation (0.3 at the usual 0.6).
     am = 0.0f; // Relative power.
 
     y = _Tdata [i-1];
@@ -467,7 +470,7 @@ float Retuner::findcycle (void)
 	    // Relative power in frequency bin.
             a1 = _Fdata [j][0] / m;
 
-	    if (a1 < 1e-4f)
+	    if (a1 < _a1min)
 	    {
 		// Too low power in spectrum, probably
 		// sub-harmonic, reject.
@@ -477,7 +480,7 @@ float Retuner::findcycle (void)
             if (im)
 	    {
 		// Compare to previous peak.
-                if (a1 / am < 1e-2f)
+                if (a1 / am < _rmin)
 		{
  		    // More than 20 dB below current peak,
   		    // probably not fundamental, reject.
@@ -494,7 +497,7 @@ float Retuner::findcycle (void)
     }
     // Best estimate has low autocorrelation,
     // assume unvoiced.
-    if (ym < 0.6f) im = 0;
+    if (ym < _vthr_v) im = 0;
     return im;
 }
 

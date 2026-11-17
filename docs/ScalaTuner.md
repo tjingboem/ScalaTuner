@@ -2,9 +2,13 @@
 
 ## What it does
 
-ScalaTuner is an autotuner that pulls the pitch of a sound onto a scale that you choose. The scale can be any Scala (.scl) file: any number of notes, and any period, so scales that repeat at the octave and scales that do not, such as Bohlen-Pierce, both work.
+ScalaTuner brings a frequency structure to sound. It follows the pitch of a sound and pulls it onto a scale that you choose. The scale can be any Scala (.scl) file: any number of notes, and any period, so scales that repeat at the octave and scales that do not, such as Bohlen-Pierce, both work.
 
-It follows one pitch at a time in each channel. Give it a voice, a bowed string, a whistle, a single synth line: it finds the pitch, looks for the nearest note of the scale, and moves the sound there. It can be used to correct a singer gently, or as an effect that forces a sound onto a grid, with every sliding note snapping from one scale note to the next.
+ScalaTuner is not only for voices. It started from an autotuner, and a voice, a bowed string or a single synth line can be corrected with it. But its purpose is wider: to give all kinds of sounds, tones and noises, a frequency structure. A gliding, noisy sound, a ringing resonance or a field recording can be given steps along a scale that it did not have before, and a sound with an unsteady pitch can be made to move from one note of the scale to the next.
+
+How much structure a sound gets depends on how clear its pitch is. For a sound with a clear pitch the detector can be left at Clear, and the result is a precise tuning. For a sound with a weaker or unsteady pitch, move the Detector slider towards Loose; the sound then follows the grid for far more of its length, in steps. A scale with few notes per octave gives large steps and a strong effect; a scale with many notes gives small steps. See Clear and Loose, below.
+
+It follows one pitch at a time in each channel: it finds the pitch, looks for the nearest note of the scale, and moves the sound there. With a sliding sound, every slide is cut into steps, from one scale note to the next.
 
 The plug-in is stereo. The left and the right channel each follow their own pitch, so two different sounds can sit in the two channels. It is built for CLAP on Linux.
 
@@ -72,6 +76,7 @@ The Settings tab holds the settings for the pitch detection. They are for fittin
 | Lowest Pitch | 50 to 500 Hz | 75 Hz | Pitches below this are not followed. |
 | Highest Pitch | 200 to 4000 Hz | 1200 Hz | Pitches above this are not followed. |
 | Threshold | -90 to -20 dB | -50 dB | Sound below this level is taken for silence. 0 dB is a full-scale sine wave. |
+| Detector | Clear to Loose | Clear | How clear a pitch the sound needs before it is followed. See Clear and Loose, below. |
 | Lookahead | Off, 43, 85, 170, 340 ms | Off | Extra delay, so that the pitch is known before a note is heard. See Delay and Lookahead, below. |
 | Hold | Off, 0.5 s, 2 s, Forever | Off | How long the correction stays when the pitch is lost. See Hold, below. |
 
@@ -89,7 +94,40 @@ The Settings page also holds the scale folders. Under SCALE FOLDERS it lists eve
 
 The folders are the same for every ScalaTuner in the project and in other projects. The scale a project uses is saved by name; if the file is no longer there when the project is opened, ScalaTuner uses 12-TET.
 
-All five settings can be automated by the host, like the sliders on the Main page.
+All six settings can be automated by the host, like the sliders on the Main page.
+
+## Clear and Loose
+
+The Detector slider decides how clear a pitch a sound needs before ScalaTuner follows it. It runs from Clear, on the left, to Loose, on the right, with every step between. Between the ends the box shows how far towards Loose the slider is, in per cent. It is the same detector at every position; the slider only changes how strict it is.
+
+- **Clear** is for sounds with a definite pitch, such as a voice, a bowed note or a single synthesiser line. The sound has to show a clear, steady repetition before it is followed. Anything less is left alone and passes through unchanged. This is how the original zita-at1 detector works.
+- **Loose** accepts much weaker evidence. It follows noisy, gliding and unstable pitches too, so far more of the sound is pulled onto the grid. On a noisy sound whose pitch glides, the glide turns into a series of steps along the scale, and the sound gets a tuning structure it did not have. The price is more flicker between notes: with Loose the steps come more often, and the pitch it finds may be a partial more than a fundamental.
+
+What the slider changes, from left to right:
+
+- **The strength of the repetition.** The detector measures how strongly a sound repeats itself, on a scale from 0 to 1. At Clear it needs at least 0.6, which is a clear, steady pitch. Moving to the right lowers this to 0, so that any repetition counts.
+- **The power in the spectrum.** At Clear, a peak is rejected if its frequency has almost no power in the spectrum, because it is probably a sub-harmonic. Towards Loose this rule fades out.
+- **The weaker peak.** At Clear, a peak that is more than 20 dB below a stronger one is rejected, because it is probably not the fundamental. Towards Loose this rule fades out too.
+
+At the far right, ScalaTuner follows every repetition that it can find. The Threshold and the pitch range on the Settings page still apply at every position: a sound that is too quiet, or outside the range, is still left alone. If part of a sound is not followed even at Loose, lower the Threshold or widen the pitch range.
+
+Move the slider towards Loose until the sound follows the grid as much as you want. Because the slider can be automated, a sound can change from clear to loose and back over time.
+
+An example of what it does. A noisy sound whose pitch glides, 12 seconds long, was run through a scale of five notes. The table shows how much of the sound was followed, and how many times per second the target note changed.
+
+| Slider | Sound followed | Note changes per second |
+|---|---|---|
+| Clear | 46 % | 13.6 |
+| 25 % | 63 % | 21.6 |
+| 50 % | 71 % | 26.6 |
+| 75 % | 76 % | 30.3 |
+| Loose | 79 % | 32.7 |
+
+The rest of the sound, about a fifth, was below the Threshold of -50 dB or outside the pitch range, and so was never followed. A clean tone with a clear pitch gave the same result at every position of the slider, so the slider does not disturb sounds that are already clear.
+
+The sparser the scale, the stronger the effect is to hear. With a scale of five notes, the average correction in this example was about half a semitone. With a scale of twelve notes it was about a fifth of a semitone, and with a scale of 43 notes, a twelfth of a semitone, which is hardly heard.
+
+Loose is meant for sound material of any kind, not for correcting a singer. Pitch class, Hold and Lookahead work in the same way at every position of the slider.
 
 ## Hold
 
@@ -171,7 +209,7 @@ Lookahead removes it. It adds delay on purpose, so that the plug-in knows the pi
 
 ## Good to know
 
-- ScalaTuner follows one pitch in each channel. Chords and several voices in one channel are not tuned note by note; the strongest pitch is followed.
+- ScalaTuner follows one pitch in each channel. Chords and several voices in one channel are not tuned note by note; the strongest pitch is followed. For sounds that are very dense, or have no pitch that the detector can find at all, the effect is limited; this is where Loose helps most.
 - It hears pitches between 75 and 1200 Hz, and a sound below -50 dB is taken for silence. Both can be changed on the Settings page. Noise without a clear pitch is left alone.
 - The scale is available over the whole range from about 27 Hz to 7 kHz, whatever the number of notes. How far a note can be pulled is limited to half a period of the scale, and at least one octave; a pitch further from every allowed note than that is left alone.
 - On a scale with few notes, such as 5 or 7 per octave, the jumps between notes are large. The meter bar can stay at its end while a note is far from the next one. That is not a fault.

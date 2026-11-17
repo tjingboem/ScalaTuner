@@ -78,6 +78,21 @@ public:
         _ifmax = hi;
     }
 
+    // Looseness 0..1: how little evidence of a pitch is enough. 0 is zita-at1: a peak
+    // of at least 0.6 in the autocorrelation, with some power in its spectrum bin
+    // and not 20 dB below a stronger peak. Higher values follow weaker, noisier and
+    // gliding pitches, with more flicker between notes. At 1 every periodicity
+    // that can be found is followed.
+    void set_looseness (float l)
+    {
+        if (l < 0.0f) l = 0.0f;
+        if (l > 1.0f) l = 1.0f;
+        float k = (1.0f - l) * (1.0f - l);
+        _vthr_v = 0.6f * (1.0f - l);     // required autocorrelation peak
+        _a1min  = 1e-4f * k;             // required power in the spectrum bin
+        _rmin   = 1e-2f * k;             // weakest peak, relative to a stronger one
+    }
+
     void set_threshold (float db)
     {
         _thresh = powf (10.0f, db / 10.0f);
@@ -179,6 +194,9 @@ private:
     int              _ifmin;
     int              _ifmax;
     float            _thresh;
+    float            _vthr_v;
+    float            _a1min;
+    float            _rmin;
     bool             _upsamp;
     int              _fftlen;
     int              _ipsize;

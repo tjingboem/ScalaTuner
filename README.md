@@ -1,22 +1,22 @@
 # ScalaTuner
 
-**ScalaTuner** is a stereo CLAP autotuner that pulls the pitch of a sound onto a
-[Scala](https://www.huygens-fokker.org/scala/) (`.scl`) scale: any number of notes per period,
-any period (octave, tritave, ...). The left and right channels are tuned independently.
-It has its own GUI, with a scale browser that reads your `.scl` files at runtime.
+**ScalaTuner** is a stereo CLAP plug-in that brings a frequency structure to sound. It pulls the pitch of a sound onto a [Scala](https://www.huygens-fokker.org/scala/) (`.scl`) scale: any number of notes per period, any period (octave, tritave, ...). The left and right channels are tuned independently, and it has its own GUI with a scale browser that reads your `.scl` files at runtime.
 
-It is monophonic: one detected pitch per channel is moved to the nearest note of the scale.
-Good for single voices or single lines, used either as a corrector or as a creative
-"push this onto a grid" effect.
+It is not only for voices. It can correct a singer or a single instrument, but its purpose is wider: to give all kinds of sounds, tones and noises, a frequency structure. With the Detector slider towards Loose, a noisy, gliding or unsteady sound follows the grid in steps along the scale, and a sparse scale makes the steps clear.
 
-The pitch tracking and resynthesis core is **zita-at1 0.8.2** by Fons Adriaensen. Only the note
-matching step was replaced, with a 128-note lookup table built from the scale.
+It follows one pitch per channel: that pitch is moved to the nearest note of the scale.
+
+The pitch tracking and resynthesis core is **zita-at1 0.8.2** by Fons Adriaensen. ScalaTuner replaces
+its note matching with a table of the scale over the whole audible range, and adds MIDI pitch class,
+the adjustable detector, Lookahead and Hold.
 
 ## Features
 - Any Scala scale, loaded at runtime from a folder (thousands are fine)
 - Stereo, with independent pitch tracking per channel
 - GUI: scale browser with type-to-search, one-period grid strip with live L/R pitch markers,
   pitch-error meters, sliders
+- **Detector** slider, Clear to Loose: how clear a pitch a sound needs before it is followed
+- **Lookahead** (up to 340 ms) and **Hold**: for sounds with a slow start or a decaying tail
 - Modes: **Auto** (held MIDI notes if any, otherwise the whole scale), **MIDI** (held notes only),
   **Manual** (whole scale)
 - **Scale Root** sets which MIDI note carries the scale's 1/1 (its sounding Hz is shown next to it); **A Reference** sets the pitch of A4. MIDI notes map one per scale degree
