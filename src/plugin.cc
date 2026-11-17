@@ -37,6 +37,7 @@ const ParamInfo param_info [P_COUNT] = {
     { "Lookahead",     0,    4,    0,     true  },
     { "Hold",          0,    3,    0,     true  },
     { "Detector",      0,    1,    0,     false },
+    { "Lock",          0,    1,    0,     true  },
 };
 
 static const char *mode_names [3] = { "Auto", "MIDI", "Manual" };
@@ -305,6 +306,7 @@ std::string plugin_param_text (Plugin *p, uint32_t id, double v)
         snprintf (b, sizeof (b), st ? "%.0f ms" : "Off  %.0f ms", (base << st) * 1000.0 / p->sr);
         return b;
     }
+    case P_LOCK:   return lrint (v) ? "On" : "Off";
     case P_DETECT:
     {
         if (v < 0.02) return "Clear";
@@ -689,6 +691,7 @@ static clap_process_status plug_process (const clap_plugin_t *pl, const clap_pro
         r->set_corroffs ((float)p->val [P_OFFS]);
         r->set_range ((float)p->val [P_MINHZ], (float)p->val [P_MAXHZ]);
         r->set_threshold ((float)p->val [P_THRESH]);
+        r->set_lock (lrint (p->val [P_LOCK]) != 0);
         r->set_looseness ((float)p->val [P_DETECT]);   // 0 = Clear ... 1 = Loose
         {
             static const float hold_s [4] = { 0.f, 0.5f, 2.f, -1.f };

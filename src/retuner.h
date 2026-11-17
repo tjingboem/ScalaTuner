@@ -93,6 +93,14 @@ public:
         _rmin   = 1e-2f * k;             // weakest peak, relative to a stronger one
     }
 
+    // Lock: while the target note stays the same, keep the correction that was found
+    // when the note was chosen, instead of following every change of the detected
+    // pitch. The sound is then shifted by a steady amount until the note changes.
+    void set_lock (bool on)
+    {
+        _lock = on;
+    }
+
     void set_threshold (float db)
     {
         _thresh = powf (10.0f, db / 10.0f);
@@ -195,6 +203,7 @@ private:
     int              _ifmax;
     float            _thresh;
     float            _vthr_v;
+    bool             _lock;
     float            _a1min;
     float            _rmin;
     bool             _upsamp;

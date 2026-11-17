@@ -38,14 +38,15 @@ static const Slider sliders [] = {
     { P_SMOOTH, 326, true,  0 },
     { P_CORR,   356, false, 0 },
     { P_OFFS,   386, false, 0 },
-    { P_MINHZ,   80, true,  1 },
-    { P_MAXHZ,  108, true,  1 },
-    { P_THRESH, 136, false, 1 },
-    { P_DETECT, 164, false, 1 },
-    { P_LOOK,   192, false, 1 },
-    { P_HOLD,   220, false, 1 },
+    { P_MINHZ,   78, true,  1 },
+    { P_MAXHZ,  104, true,  1 },
+    { P_THRESH, 130, false, 1 },
+    { P_DETECT, 156, false, 1 },
+    { P_LOOK,   182, false, 1 },
+    { P_HOLD,   208, false, 1 },
+    { P_LOCK,   234, false, 1 },
 };
-static const int NSL = 12;
+static const int NSL = 13;
 static const int TAB_X = RX + RW - 176, TAB_Y = 10, TAB_W = 84, TAB_H = 26;
 static const int SL_X = RX + 110, SL_W = RW - 110 - 120, SL_H = 10;
 
@@ -266,8 +267,8 @@ static void draw (Gui *g, cairo_t *cr)
 
     if (g->page == 1)
     {
-        col (cr, 0x1d2027); rrect (cr, RX, 52, RW, 192, 6); cairo_fill (cr);
-        text (cr, RX + 12, 72, "PITCH DETECTION", 11, 0x6c7380);
+        col (cr, 0x1d2027); rrect (cr, RX, 52, RW, 200, 6); cairo_fill (cr);
+        text (cr, RX + 12, 69, "PITCH DETECTION", 11, 0x6c7380);
         for (int i = 0; i < NSL; i++)
         {
             const Slider &s = sliders [i];
@@ -279,13 +280,13 @@ static void draw (Gui *g, cairo_t *cr)
             col (cr, g->drag == i ? 0x7fd6ff : 0x4aa8e0); rrect (cr, SL_X, s.y, std::max (6.0, n * SL_W), SL_H, 4); cairo_fill (cr);
             text (cr, RX + RW - 12, s.y + 9, plugin_param_text (p, s.param, v).c_str (), 12, 0xe8ecf4, 1);
         }
-        col (cr, 0x1d2027); rrect (cr, RX, 254, RW, 182, 6); cairo_fill (cr);
+        col (cr, 0x1d2027); rrect (cr, RX, 262, RW, 174, 6); cairo_fill (cr);
         snprintf (b, sizeof (b), "SCALE FOLDERS   %d files", p->nscales);
-        text (cr, RX + 12, 276, b, 11, 0x6c7380);
+        text (cr, RX + 12, 284, b, 11, 0x6c7380);
         int ncfg = (int)p->cfg_dirs.size ();
         for (size_t i = 0; i < p->dirs.size () && i < 4; i++)
         {
-            int y = 286 + (int)i * 24;
+            int y = 294 + (int)i * 24;
             std::string d = p->dirs [i];
             if (d.size () > 38) d = "..." + d.substr (d.size () - 35);
             bool removable = false;
@@ -301,16 +302,16 @@ static void draw (Gui *g, cairo_t *cr)
             }
         }
         (void)ncfg;
-        col (cr, g->path_focus ? 0x2c3340 : 0x242830); rrect (cr, RX + 12, 394, RW - 24, 26, 4); cairo_fill (cr);
-        if (g->path_buf.empty () && !g->path_focus) text (cr, RX + 22, 412, "add folder: type or paste path, Return", 13, 0x6c7380);
+        col (cr, g->path_focus ? 0x2c3340 : 0x242830); rrect (cr, RX + 12, 398, RW - 24, 26, 4); cairo_fill (cr);
+        if (g->path_buf.empty () && !g->path_focus) text (cr, RX + 22, 416, "add folder: type or paste path, Return", 13, 0x6c7380);
         else
         {
             std::string t = g->path_buf;
             if (t.size () > 50) t = "..." + t.substr (t.size () - 47);
-            text (cr, RX + 22, 412, (t + (g->path_focus ? "|" : "")).c_str (), 13, 0xe8ecf4);
+            text (cr, RX + 22, 416, (t + (g->path_focus ? "|" : "")).c_str (), 13, 0xe8ecf4);
         }
         if (!g->msg.empty () && now_ms () < g->msg_until)
-            text (cr, RX + 12, 430, g->msg.c_str (), 11, 0xff8a7a);
+            text (cr, RX + 12, 434, g->msg.c_str (), 11, 0xff8a7a);
         return;
     }
 
@@ -516,7 +517,7 @@ static void on_button (Gui *g, XButtonEvent *e)
         // folder remove buttons
         for (size_t i = 0; i < g->p->dirs.size () && i < 4; i++)
         {
-            int ry = 286 + (int)i * 24;
+            int ry = 294 + (int)i * 24;
             if (x >= RX + RW - 34 && x < RX + RW - 12 && y >= ry + 2 && y < ry + 22)
                 for (size_t c = 0; c < g->p->cfg_dirs.size (); c++)
                     if (g->p->cfg_dirs [c] == g->p->dirs [i])
@@ -527,7 +528,7 @@ static void on_button (Gui *g, XButtonEvent *e)
                         return;
                     }
         }
-        if (x >= RX + 12 && x < RX + RW - 12 && y >= 394 && y < 420)
+        if (x >= RX + 12 && x < RX + RW - 12 && y >= 398 && y < 424)
         {
             g->path_focus = true;
             g->search_focus = false;

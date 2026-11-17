@@ -79,6 +79,7 @@ Retuner::Retuner (int fsamp) :
     // Accepted correlation peak range, corresponding to 75..1200 Hz.
     _thresh = 1e-5f;  // -50 dB
     _vthr_v = 0.6f;
+    _lock = false;
     _a1min = 1e-4f;
     _rmin = 1e-2f;
     _ifmin = _fsamp / 1200;
@@ -535,7 +536,7 @@ void Retuner::finderror (void)
 
     if (_lastnote == im)
     {
-        _error += _corrfilt * (dm - _error);
+        if (!_lock) _error += _corrfilt * (dm - _error);
     }
     else
     {

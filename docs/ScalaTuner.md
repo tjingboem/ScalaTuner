@@ -78,6 +78,7 @@ The Settings tab holds the settings for the pitch detection. They are for fittin
 | Threshold | -90 to -20 dB | -50 dB | Sound below this level is taken for silence. 0 dB is a full-scale sine wave. |
 | Detector | Clear to Loose | Clear | How clear a pitch the sound needs before it is followed. See Clear and Loose, below. |
 | Lookahead | Off, 43, 85, 170, 340 ms | Off | Extra delay, so that the pitch is known before a note is heard. See Delay and Lookahead, below. |
+| Lock | Off, On | Off | Keep the correction steady while the target note stays the same. See Lock, below. |
 | Hold | Off, 0.5 s, 2 s, Forever | Off | How long the correction stays when the pitch is lost. See Hold, below. |
 
 Set the range around the sound that you play in. A bass line can have the range 40 to 300 Hz, and a high flute 250 to 3000 Hz. A narrower range makes it harder for the detector to mistake a harmonic for the pitch, which is the cause of a note jumping an octave. It also keeps ScalaTuner from reacting to rumble or hiss.
@@ -94,7 +95,7 @@ The Settings page also holds the scale folders. Under SCALE FOLDERS it lists eve
 
 The folders are the same for every ScalaTuner in the project and in other projects. The scale a project uses is saved by name; if the file is no longer there when the project is opened, ScalaTuner uses 12-TET.
 
-All six settings can be automated by the host, like the sliders on the Main page.
+All seven settings can be automated by the host, like the sliders on the Main page.
 
 ## Clear and Loose
 
@@ -128,6 +129,17 @@ The rest of the sound, about a fifth, was below the Threshold of -50 dB or outsi
 The sparser the scale, the stronger the effect is to hear. With a scale of five notes, the average correction in this example was about half a semitone. With a scale of twelve notes it was about a fifth of a semitone, and with a scale of 43 notes, a twelfth of a semitone, which is hardly heard.
 
 Loose is meant for sound material of any kind, not for correcting a singer. Pitch class, Hold and Lookahead work in the same way at every position of the slider.
+
+## Lock
+
+With a sound that holds several pitches at once, the detector hops from one voice to another, because it follows the strongest pitch at each moment. Each hop gives a different amount of correction, and the Smoothing filter turns the changes into slides. All the voices of the sound are moved by the same correction, so they seem to glide between each other. This is an internal glide, and it comes from imposing a grid on a sound that has more than one pitch.
+
+Lock switches that off. While the target note stays the same, the correction is kept at the value that was found when the note was chosen, and it no longer follows every small change of the detected pitch. The whole sound is then moved by a steady amount for as long as the note lasts, and it only jumps when the target note changes. A change of the target note is heard as a step, not as a slide.
+
+- Use Lock on dense or polyphonic sounds, and on sounds with an unsteady pitch, when the glides between the steps are not wanted.
+- With Lock on, a sound whose own pitch moves slowly keeps its own movement on top of the steady correction. The correction no longer corrects it back onto the note between two steps.
+- Lock does not change which note is chosen, only how the correction behaves while the note stays the same. Smoothing has no effect while Lock is on, except at the start of a note.
+- In a test with a noisy gliding sound, the movement of the correction within a note became about 40 % smaller with Clear, and about 55 % smaller with Loose.
 
 ## Hold
 
@@ -206,6 +218,60 @@ Lookahead removes it. It adds delay on purpose, so that the plug-in knows the pi
 - A change of Lookahead changes the delay of the plug-in. Some hosts need a moment to recalculate the compensation, or restart playback.
 - A sound with a long, noisy or inharmonic start, such as the attack of a bell or a struck resonator, may need the pitch for a quarter of a second or more before the detector is sure of it. Choose 170 or 340 ms for such a sound. Such a start may still never be heard as one pitch.
 - A change of Lookahead while the sound plays moves the playback position at once, which may be heard as a click. Set it before you play.
+
+## Five examples
+
+These five examples are very different from each other. Each one gives the sound, the scale and the settings, and says what happens. The numbers come from tests with sounds made for the purpose, and with sounds of the kind described. The settings that are not mentioned stay at their defaults. Try the same settings on your own material, and change them from there.
+
+### 1. Tuning a line that drifts
+
+**The sound.** A single line that is out of tune and wanders: a voice, a violin, a synthesiser line with vibrato.
+
+**The scale.** 12-TET, which is the first entry of the list. Any other scale of twelve notes gives another tuning of the same line.
+
+**The settings.** Mode on Auto, Detector on Clear, Smoothing at its fastest (0.02). The rest at the defaults.
+
+**What happens.** Each note is pulled to the nearest note of the scale and kept there, and the drift and most of the vibrato disappear. In a test with a line that was up to 45 cents out of tune and moved by a vibrato of 25 cents, the average distance from the grid went from 29 cents to 8 cents. With Smoothing at its default of 0.1, part of the vibrato stays and the average distance is 16 cents. This is the classic use, and the one in which Clear is the right setting.
+
+### 2. Playing a sound like an instrument
+
+**The sound.** A struck resonance with a long decay, about 8 seconds, built on the harmonic series of a C.
+
+**The scale.** Slendro, five notes to the octave, at 231, 435, 702 and 933 cents above the root.
+
+**The settings.** Mode on MIDI, Scale Root on C4, Lookahead 340 ms, Hold on Forever, Threshold at -72 dB. Send the sound the MIDI notes C4, D4, C#4, E4, D#4 and C4 again, one after the other, each held for about a second and a half.
+
+**What happens.** The whole sound moves to the note that is played, in the intervals of the scale and not those of the keyboard. The keys are steps 0, 2, 1, 4, 3 and 0 of the scale. In a test the sound moved by 0, +431, +226, -273 and -502 cents, where the scale gives 0, +435, +231, -267 and -498 cents. Pitch class means that the octave of the key does not matter. Lookahead lets the start of each sound already be on the new note, and Hold lets the decay stay on the note until the sound has gone.
+
+### 3. A structure for a noisy sound that glides
+
+**The sound.** A noisy sound that slides about without a clear pitch, such as ring-modulated material.
+
+**The scale.** arist_enh3, seven notes to the octave, in two tight clusters (0, 42, 83 cents and 700, 742, 783 cents) with large gaps between them.
+
+**The settings.** Mode on Auto, Detector all the way to Loose, Lock on.
+
+**What happens.** The slide is cut into plateaus, and the sound jumps over the large gaps of the scale. In a test with 14 seconds of such a sound, Clear followed 46 % of the sound, and Loose followed 79 %. The note changed about 32 times a second, and not 13. With Lock on, the movement of the correction within one note was more than half smaller than with Clear and Lock off. The sound gets a direction that it did not have, and the large steps of this scale are clearly heard.
+
+### 4. A grid that is not an octave
+
+**The sound.** A rising sweep, from 100 to 800 Hz in twelve seconds.
+
+**The scale.** Bohlen-Pierce, in the version bohlen-p_et: 13 equal steps of 146 cents that together cover the 3:1 ratio, a tritave, and not an octave.
+
+**The settings.** Mode on Auto, Detector on Clear, Smoothing at its fastest.
+
+**What happens.** The smooth sweep turns into a staircase on the steps of the Bohlen-Pierce scale. In the test the sweep went through 25 notes of the scale, and the time it spent within 10 cents of a note rose from 14 % to 62 %. The average distance from the nearest note fell from 36 cents to 14 cents. The steps are 146 cents wide and do not repeat at the octave: this is a grid that the keyboard and the usual autotuners do not have.
+
+### 5. A grid that changes over time
+
+**The sound.** The same sweep as in the fourth example.
+
+**The scale.** Automated: Slendro for the first four seconds, Partch's 43 notes for the next four, arist_enh3 for the last four. In REAPER, for example, this is an envelope on the Scale parameter; see Changing scales over time.
+
+**The settings.** The same as in the fourth example.
+
+**What happens.** The same sound is strongly structured in one part and hardly touched in another. With Slendro, the average distance from the notes of the scale went from 59 cents to 11 cents. With Partch's 43 notes it went from 7 cents to 6 cents: the notes are so close that every pitch is already near one, so there is almost nothing to pull. With arist_enh3 the distance went from 90 cents to 56 cents. A scale with few notes pulls hard, a scale with many notes hardly at all, so changing the scale over time moves the sound between steps and slides.
 
 ## Good to know
 
