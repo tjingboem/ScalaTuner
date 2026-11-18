@@ -81,6 +81,7 @@ struct Gui
     std::string path_buf;
     std::string msg;             // short status under the field
     long msg_until;
+    int mouse_x, mouse_y;         // last known pointer position, for grid hover
 
     // cached current scale for drawing
     Scl     scl;
@@ -322,10 +323,14 @@ static void draw (Gui *g, cairo_t *cr)
     text (cr, RX + 10, sy + 10, "GRID  (one period, root at left)", 11, 0x6c7380);
     int gx = RX + 14, gw = RW - 28, gy = sy + 22;
     col (cr, 0x2a2e37); cairo_rectangle (cr, gx, gy + 38, gw, 1); cairo_fill (cr);
+    int hover_i = -1;
     for (int i = 0; i < g->scl.n; i++)
     {
         double pos = i == 0 ? 0 : g->scl.oct [i - 1] / period;
         double x = gx + pos * gw;
+        if (hover_i < 0 && g->mouse_x >= x - 5 && g->mouse_x <= x + 5 &&
+            g->mouse_y >= gy && g->mouse_y <= gy + 70)
+            hover_i = i;
         col (cr, 0x7fb0d8); cairo_rectangle (cr, x - 0.5, gy + 20, 1.5, 36); cairo_fill (cr);
         if (g->scl.n <= 24 && i > 0)
         {
@@ -334,6 +339,13 @@ static void draw (Gui *g, cairo_t *cr)
         }
     }
     col (cr, 0xe8ecf4); cairo_rectangle (cr, gx + gw - 0.5, gy + 20, 1.5, 36); cairo_fill (cr); // period = next 1/1
+    if (hover_i >= 0)
+    {
+        double cents = hover_i == 0 ? 0.0 : g->scl.oct [hover_i - 1] * 1200.0;
+        if (hover_i == 0) snprintf (b, sizeof (b), "1/1 (root)");
+        else snprintf (b, sizeof (b), "deg %d  \xc2\xb7  %.1f c", hover_i, cents);
+        text (cr, RX + RW - 10, sy + 10, b, 11, 0xe8ecf4, 1);
+    }
     double tune = p->val [P_TUNE];
     double rootlog = ((int)lrint (p->val [P_ROOT]) - 69) / 12.0;
     static const unsigned chcol [2] = { 0x5cc8ff, 0xffb35c };
@@ -577,6 +589,8 @@ static void on_button (Gui *g, XButtonEvent *e)
 
 static void on_motion (Gui *g, XMotionEvent *e)
 {
+    g->mouse_x = e->x;
+    g->mouse_y = e->y;
     if (g->drag >= 0) set_slider_from_x (g, g->drag, e->x, (e->state & ShiftMask) != 0);
     else if (g->dragging_scroll)
     {

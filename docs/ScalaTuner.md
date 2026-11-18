@@ -55,6 +55,8 @@ The scale is saved with the project by its name, not by its place in the list. S
 
 The strip shows one period of the scale, starting at the Scale Root. Each thin blue line is a scale note. The first line, on the far left, is the first scale note (1/1); the white line on the far right is the same scale note, one period higher. A scale with 24 notes or fewer has the step number of each scale note under its line.
 
+Hovering the mouse over a line shows its size in cents from the root, at the top right of the strip.
+
 The sound you play in is shown on the strip while ScalaTuner hears a pitch: a blue marker for the left channel, an orange marker for the right. The marker shows where the pitch sits inside the period, whatever the octave. A marker standing on a line is in tune; between two lines is where it will be pulled from.
 
 ## The meters
